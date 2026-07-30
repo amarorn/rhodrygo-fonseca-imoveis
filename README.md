@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rhodrygo Fonseca Imóveis
 
-## Getting Started
+Site imobiliário premium de alta conversão para o corretor **Rhodrygo Fonseca**, desenvolvido com Next.js 14+, TypeScript, Tailwind CSS e animações GSAP.
 
-First, run the development server:
+## Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Linguagem:** TypeScript (strict)
+- **Estilização:** Tailwind CSS 4
+- **Animações:** GSAP + ScrollTrigger + Lenis
+- **Formulários:** React Hook Form + Zod
+- **Ícones:** Lucide React
+
+## Pré-requisitos
+
+- Node.js 18+
+- npm ou yarn
+
+## Instalação
+
+```bash
+cd rhodrygo-fonseca-imoveis
+npm install
+```
+
+## Desenvolvimento
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build de Produção
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Estrutura do Projeto
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/           # Layout, página principal, estilos globais
+├── sections/      # Seções da home (Hero, Imóveis, FAQ, etc.)
+├── components/    # Componentes reutilizáveis
+├── hooks/         # Hooks customizados (Lenis, scroll, exit intent)
+├── lib/           # Utilitários, animações e dados mock
+└── types/         # Tipos TypeScript
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Seções
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Hero** — Split-screen com formulário de captação e animação cinematográfica
+2. **Trust Badges** — Barra de credibilidade
+3. **Imóveis** — Grid com filtros por categoria
+4. **Como Funciona** — 4 passos animados
+5. **Sobre** — Apresentação do corretor
+6. **Depoimentos** — Cards com glassmorphism
+7. **CTA E-book** — Lead magnet
+8. **FAQ** — Accordion com navegação por teclado
+9. **Contato** — Formulário completo + informações
 
-## Deploy on Vercel
+## Funcionalidades de Conversão
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- 5 formulários com validação Zod (Hero, Contato, E-book, Exit Intent, Newsletter)
+- Botão flutuante WhatsApp com deep links contextualizados
+- Modal de exit intent (mouse leave desktop / timeout 30s mobile)
+- Cursor customizado (desktop only)
+- Smooth scroll com Lenis
+- Filtro de imóveis por categoria
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Paleta de Cores
+
+| Token | Hex |
+|-------|-----|
+| Navy | `#0a1f44` |
+| Gold | `#c9a227` |
+| Cream | `#faf8f3` |
+| WhatsApp | `#25d366` |
+
+## Licença
+
+Projeto privado — Rhodrygo Fonseca Imóveis.
