@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PropertyDetailView } from "@/components/PropertyDetailView";
+import { PropertyTracker } from "@/components/PropertyTracker";
 import { getAllPropertySlugs, getPropertyBySlug } from "@/lib/properties";
 import { formatPrice } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ export default async function PropertyPage({ params }: PageProps) {
 
   return (
     <>
+      <PropertyTracker property={property} />
       <Navbar />
       <main className="min-h-screen bg-rf-cream pt-24">
         <PropertyDetailView property={property} />

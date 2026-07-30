@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { MetaPixel } from "@/components/MetaPixel";
+import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/lib/constants";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -20,7 +22,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://amarorn.github.io/rhodrygo-fonseca-imoveis"),
+  metadataBase: new URL(SITE_URL),
   title: "Rhodrygo Fonseca | Corretor de Imóveis - Encontre seu Imóvel Ideal",
   description:
     "Corretor de imóveis especializado em encontrar o imóvel dos seus sonhos. Atendimento personalizado, as melhores oportunidades do mercado.",
@@ -57,6 +59,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${playfair.variable} ${montserrat.variable}`}>
       <body className="font-sans antialiased">
+        <JsonLd />
         <MetaPixel />
         <Providers>{children}</Providers>
       </body>

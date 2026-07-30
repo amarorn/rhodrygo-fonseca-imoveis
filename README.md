@@ -58,6 +58,22 @@ npm run build:gh-pages
 
 Os arquivos estáticos são gerados na pasta `out/`.
 
+## Domínio próprio (rhodrygofonseca.com.br)
+
+O arquivo `public/CNAME` já aponta para `rhodrygofonseca.com.br`. Para ativar:
+
+1. No registrador do domínio, crie registro **CNAME** `@` → `amarorn.github.io`
+2. No GitHub: **Settings → Pages → Custom domain** → `rhodrygofonseca.com.br`
+3. Atualize `next.config.ts` removendo `basePath` e `assetPrefix` (domínio na raiz)
+4. Defina `NEXT_PUBLIC_SITE_URL=https://rhodrygofonseca.com.br` no build
+
+## SEO e rastreamento
+
+- `sitemap.xml` e `robots.txt` gerados automaticamente
+- JSON-LD `RealEstateAgent` no layout
+- Meta Pixel: `NEXT_PUBLIC_META_PIXEL_ID` no `.env.local`
+- UTMs capturados ao entrar pelo Instagram (`?utm_source=instagram`)
+
 ## Imóveis do Instagram
 
 Os imóveis em destaque vêm do perfil [@rhodrygofonseca](https://www.instagram.com/rhodrygofonseca/). Cada um tem página de detalhe em `/imoveis/[slug]`.

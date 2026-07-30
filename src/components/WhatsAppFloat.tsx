@@ -2,10 +2,12 @@
 
 import { MessageCircle } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils";
+import { trackLead } from "@/lib/analytics";
 
 export function WhatsAppFloat() {
   const href = buildWhatsAppLink(
-    "Olá Rhodrygo! Vim pelo site e gostaria de conversar sobre imóveis."
+    "Olá Rhodrygo! Vim pelo site e gostaria de conversar sobre imóveis.",
+    { source: "site", medium: "float_button", campaign: "whatsapp_float" }
   );
 
   return (
@@ -14,6 +16,7 @@ export function WhatsAppFloat() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Falar no WhatsApp"
+      onClick={() => trackLead("Contact", { content_name: "whatsapp_float" })}
       className="whatsapp-float group fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-rf-whatsapp text-white shadow-lg transition-transform duration-200 hover:scale-110"
     >
       <MessageCircle className="h-7 w-7" fill="currentColor" strokeWidth={0} />

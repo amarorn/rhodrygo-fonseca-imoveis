@@ -57,7 +57,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     id: "1",
     name: "Mariana Silva",
-    role: "Comprou apartamento em Boa Viagem",
+    role: "Comprou apartamento em Ponta Negra",
     content:
       "O Rhodrygo foi fundamental na compra do meu primeiro apartamento. Atendimento impecável do início ao fim, sempre disponível para tirar dúvidas.",
     rating: 5,
@@ -67,7 +67,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     id: "2",
     name: "Carlos Mendes",
-    role: "Vendeu casa em Casa Forte",
+    role: "Vendeu casa em Pipa",
     content:
       "Profissionalismo e dedicação incomparáveis. Vendeu minha casa em tempo recorde e pelo melhor valor do mercado. Recomendo de olhos fechados!",
     rating: 5,

@@ -3,6 +3,7 @@ import { Footer } from "@/components/Footer";
 import { Hero } from "@/sections/Hero";
 import { TrustBadges } from "@/sections/TrustBadges";
 import { Properties } from "@/sections/Properties";
+import { InstagramCTA } from "@/sections/InstagramCTA";
 import { HowItWorks } from "@/sections/HowItWorks";
 import { About } from "@/sections/About";
 import { Testimonials } from "@/sections/Testimonials";
@@ -18,6 +19,7 @@ export default function Home() {
         <Hero />
         <TrustBadges />
         <Properties />
+        <InstagramCTA />
         <HowItWorks />
         <About />
         <Testimonials />
