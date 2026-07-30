@@ -58,16 +58,20 @@ npm run build:gh-pages
 
 Os arquivos estáticos são gerados na pasta `out/`.
 
-## Domínio próprio (rhodrygofonseca.com.br)
+## Domínio próprio (quando comprar)
 
-O arquivo `public/CNAME` já aponta para `rhodrygofonseca.com.br`. Para ativar:
+O site funciona **sem domínio** na URL gratuita:
 
-1. No registrador do domínio, crie registro **CNAME** `@` → `amarorn.github.io`
-2. No GitHub: **Settings → Pages → Custom domain** → `rhodrygofonseca.com.br`
-3. Atualize `next.config.ts` removendo `basePath` e `assetPrefix` (domínio na raiz)
-4. Defina `NEXT_PUBLIC_SITE_URL=https://rhodrygofonseca.com.br` no build
+**https://amarorn.github.io/rhodrygo-fonseca-imoveis/**
 
-## SEO e rastreamento
+### Comprar depois (~R$ 40/ano)
+
+1. Registre em [registro.br](https://registro.br) → `rhodrygofonseca.com.br`
+2. Configure DNS (registros A + CNAME — ver `docs/CONFIGURACAO-META-E-DOMINIO.md`)
+3. GitHub → **Settings → Pages → Custom domain**
+4. No repo: restaure `public/CNAME` e altere deploy para `USE_CUSTOM_DOMAIN=true`
+
+### Link para bio do Instagram (use agora)
 
 - `sitemap.xml` e `robots.txt` gerados automaticamente
 - JSON-LD `RealEstateAgent` no layout

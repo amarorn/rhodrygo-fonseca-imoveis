@@ -35,8 +35,8 @@ jobs:
         run: npm run build:gh-pages
         env:
           GITHUB_PAGES: "true"
-          USE_CUSTOM_DOMAIN: "true"
-          NEXT_PUBLIC_SITE_URL: https://rhodrygofonseca.com.br
+          USE_CUSTOM_DOMAIN: "false"
+          NEXT_PUBLIC_SITE_URL: https://amarorn.github.io/rhodrygo-fonseca-imoveis
           NEXT_PUBLIC_META_PIXEL_ID: ${{ secrets.NEXT_PUBLIC_META_PIXEL_ID }}
 
       - name: Add .nojekyll
