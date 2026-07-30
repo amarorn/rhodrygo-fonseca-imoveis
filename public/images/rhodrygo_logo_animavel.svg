@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1024 682" width="100%" height="100%">
+  <defs>
+    <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bf953f"/>
+      <stop offset="25%" stop-color="#fcf6ba"/>
+      <stop offset="50%" stop-color="#b38728"/>
+      <stop offset="75%" stop-color="#fbf5b7"/>
+      <stop offset="100%" stop-color="#aa771c"/>
+    </linearGradient>
+    <linearGradient id="shine-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="white" stop-opacity="0"/>
+      <stop offset="50%" stop-color="white" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="logo-clip">
+      <rect x="0" y="0" width="1024" height="682" rx="8"/>
+    </clipPath>
+  </defs>
+
+  <!-- Logo oficial (PNG) — fidelidade visual idêntica -->
+  <g id="anim-logo-full" clip-path="url(#logo-clip)">
+    <image
+      id="anim-logo-image"
+      href="logo-rhodrygo-fonseca-transparent.png"
+      x="0"
+      y="0"
+      width="1024"
+      height="682"
+      preserveAspectRatio="xMidYMid meet"
+    />
+  </g>
+
+  <!-- Brilho dourado animável (overlay) -->
+  <g id="anim-shine" opacity="0">
+    <rect x="-300" y="0" width="300" height="682" fill="url(#shine-gradient)"/>
+  </g>
+</svg>

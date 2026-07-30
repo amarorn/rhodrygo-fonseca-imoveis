@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { NAV_LINKS, SITE } from "@/lib/constants";
+import { NavbarBrand } from "@/components/NavbarBrand";
+import { NAV_LINKS } from "@/lib/constants";
 import { cn, scrollToSection } from "@/lib/utils";
 
 export function Navbar() {
@@ -24,45 +25,34 @@ export function Navbar() {
   }, [menuOpen]);
 
   const handleNav = (href: string) => {
-    const id = href.replace("#", "");
-    scrollToSection(id);
+    scrollToSection(href.replace("#", ""));
     setMenuOpen(false);
   };
 
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
+        "fixed inset-x-0 top-0 z-50 border-b transition-all duration-300",
         scrolled
-          ? "bg-rf-navy/95 py-4 shadow-[0_4px_20px_rgba(0,0,0,0.1)] backdrop-blur-[12px]"
-          : "bg-transparent py-6"
+          ? "border-gray-200/90 bg-gradient-to-b from-white to-rf-cream py-3 shadow-[0_4px_24px_rgba(10,31,68,0.07)]"
+          : "border-gray-200/50 bg-gradient-to-b from-white via-[#fefdfb] to-rf-cream/80 py-4"
       )}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <button
           onClick={() => handleNav("#inicio")}
-          className="flex items-center gap-3 text-left"
+          className="shrink-0 text-left transition-opacity hover:opacity-90"
           aria-label="Ir para início"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-rf-gold font-display text-lg font-bold text-rf-navy">
-            RF
-          </span>
-          <span className="hidden sm:block">
-            <span className="block text-sm font-bold tracking-wider text-white">
-              {SITE.name.toUpperCase()}
-            </span>
-            <span className="block text-[10px] tracking-widest text-rf-gold">
-              {SITE.title.toUpperCase()}
-            </span>
-          </span>
+          <NavbarBrand />
         </button>
 
-        <nav className="hidden items-center gap-8 lg:flex" aria-label="Principal">
+        <nav className="hidden items-center gap-7 lg:flex" aria-label="Principal">
           {NAV_LINKS.map((link) => (
             <button
               key={link.href}
               onClick={() => handleNav(link.href)}
-              className="text-sm font-medium text-white/90 transition-colors hover:text-rf-gold"
+              className="text-sm font-medium text-rf-navy/80 transition-colors hover:text-rf-gold"
             >
               {link.label}
             </button>
@@ -72,14 +62,14 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => handleNav("#imoveis")}
-            className="hidden rounded-xl bg-rf-gold px-5 py-2.5 text-sm font-semibold text-rf-navy transition-colors hover:bg-rf-gold-light sm:block"
+            className="hidden rounded-xl bg-rf-gold px-5 py-2.5 text-sm font-semibold text-rf-navy shadow-sm transition-all hover:bg-rf-gold-light hover:shadow-md sm:block"
           >
             Quero um Imóvel
           </button>
 
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="rounded-lg p-2 text-white lg:hidden"
+            className="rounded-lg p-2 text-rf-navy lg:hidden"
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={menuOpen}
           >
@@ -103,7 +93,7 @@ export function Navbar() {
 
       <div
         className={cn(
-          "fixed inset-0 top-[72px] z-40 bg-rf-navy/98 backdrop-blur-lg transition-all duration-300 lg:hidden",
+          "fixed inset-x-0 top-[76px] z-40 border-b border-gray-200 bg-white transition-all duration-300 sm:top-[80px] lg:hidden",
           menuOpen ? "visible opacity-100" : "invisible opacity-0 pointer-events-none"
         )}
       >
@@ -112,7 +102,7 @@ export function Navbar() {
             <button
               key={link.href}
               onClick={() => handleNav(link.href)}
-              className="rounded-xl px-4 py-3 text-left text-lg font-medium text-white transition-colors hover:bg-white/10 hover:text-rf-gold"
+              className="rounded-xl px-4 py-3 text-left text-lg font-medium text-rf-navy transition-colors hover:bg-rf-cream hover:text-rf-gold"
             >
               {link.label}
             </button>

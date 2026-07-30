@@ -12,6 +12,13 @@ export const SITE = {
   name: "Rhodrygo Fonseca",
   title: "Corretor de Imóveis",
   creci: "CRECI-PE 00000",
+  logo: {
+    src: "/images/rhodrygo_logo_animavel.svg",
+    png: "/images/logo-rhodrygo-fonseca-transparent.png",
+    monogram: "/images/logo-monogram.png",
+    pngOriginal: "/images/logo-rhodrygo-fonseca.png",
+    alt: "Rhodrygo Fonseca - Corretor de Imóveis",
+  },
 } as const;
 
 export const CONTACT: ContactInfo = {

@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/Logo";
 import { NAV_LINKS, SITE } from "@/lib/constants";
 import { LeadForm } from "@/components/LeadForm";
 import { scrollToSection } from "@/lib/utils";
@@ -35,14 +36,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-rf-gold font-display text-lg font-bold text-rf-navy">
-                RF
-              </span>
-              <div>
-                <p className="font-display text-lg font-semibold">{SITE.name}</p>
-                <p className="text-xs text-rf-gold">{SITE.title}</p>
-              </div>
+            <div className="mb-4">
+              <Logo variant="footer" />
             </div>
             <p className="text-sm text-white/70">
               Encontre o imóvel dos seus sonhos com atendimento personalizado e as

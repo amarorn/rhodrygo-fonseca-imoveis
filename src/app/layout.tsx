@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { SITE } from "@/lib/constants";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -18,6 +19,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://amarorn.github.io/rhodrygo-fonseca-imoveis"),
   title: "Rhodrygo Fonseca | Corretor de Imóveis - Encontre seu Imóvel Ideal",
   description:
     "Corretor de imóveis especializado em encontrar o imóvel dos seus sonhos. Atendimento personalizado, as melhores oportunidades do mercado.",
@@ -33,6 +35,16 @@ export const metadata: Metadata = {
       "Corretor de imóveis especializado em encontrar o imóvel dos seus sonhos. Atendimento personalizado, as melhores oportunidades do mercado.",
     type: "website",
     locale: "pt_BR",
+    images: [
+      {
+        url: SITE.logo.pngOriginal,
+        alt: SITE.logo.alt,
+      },
+    ],
+  },
+  icons: {
+    icon: SITE.logo.pngOriginal,
+    apple: SITE.logo.pngOriginal,
   },
 };
 
