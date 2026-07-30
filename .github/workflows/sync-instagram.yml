@@ -18,17 +18,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Install Apify CLI
-        run: npm install -g apify-cli
+          node-version: 22
 
       - name: Sync properties from Instagram
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-        run: |
-          apify login --token "$APIFY_TOKEN"
-          node scripts/sync-instagram-properties.mjs
+        run: node scripts/sync-instagram-properties.mjs
 
       - name: Commit and push if changed
         run: |

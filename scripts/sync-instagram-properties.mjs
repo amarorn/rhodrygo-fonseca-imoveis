@@ -1,15 +1,12 @@
 /**
  * Sincroniza imóveis do Instagram → src/data/properties.json
  *
- * Pré-requisitos:
- *   npm install -g apify-cli
- *   apify login --token SEU_TOKEN
+ * Requer APIFY_TOKEN no ambiente (GitHub Secret ou .env.local)
  *
  * Uso:
- *   node scripts/sync-instagram-properties.mjs
+ *   APIFY_TOKEN=xxx node scripts/sync-instagram-properties.mjs
  */
 
-import { execSync } from "node:child_process";
 import { writeFileSync, mkdirSync, createWriteStream } from "node:fs";
 import { dirname, join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,12 +16,21 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PROFILE = "https://www.instagram.com/rhodrygofonseca/";
 const OUTPUT_JSON = join(ROOT, "src/data/properties.json");
 const IMAGES_DIR = join(ROOT, "public/properties");
+const ACTOR_ID = "apify~instagram-scraper";
 
-const input = JSON.stringify({
+const APIFY_TOKEN = process.env.APIFY_TOKEN;
+if (!APIFY_TOKEN) {
+  console.error("Erro: defina APIFY_TOKEN no ambiente.");
+  console.error("  GitHub: Settings → Secrets → APIFY_TOKEN");
+  console.error("  Local:  APIFY_TOKEN=xxx node scripts/sync-instagram-properties.mjs");
+  process.exit(1);
+}
+
+const actorInput = {
   directUrls: [PROFILE],
   resultsType: "posts",
   resultsLimit: 50,
-});
+};
 
 function slugify(text) {
   return text
@@ -85,7 +91,7 @@ function downloadImage(url, dest) {
     https
       .get(url, { headers: { "User-Agent": "Mozilla/5.0", Referer: "https://www.instagram.com/" } }, (res) => {
         if (res.statusCode !== 200) {
-          reject(new Error(`HTTP ${res.statusCode} for ${dest}`));
+          reject(new Error(`HTTP ${res.statusCode}`));
           return;
         }
         res.pipe(file);
@@ -95,41 +101,71 @@ function downloadImage(url, dest) {
   });
 }
 
-console.log("Buscando posts do Instagram via Apify...");
+async function fetchInstagramPosts() {
+  const url = `https://api.apify.com/v2/acts/${ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_TOKEN}&timeout=300`;
 
-async function main() {
-  let posts;
-  try {
-    const raw = execSync(`apify actors call apify/instagram-scraper --input '${input.replace(/'/g, "'\\''")}'`, {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "inherit"],
-      maxBuffer: 20 * 1024 * 1024,
-    });
-    posts = JSON.parse(raw);
-  } catch {
-    console.error("\nErro: configure o Apify CLI primeiro.");
-    console.error("  npm install -g apify-cli");
-    console.error("  apify login --token SEU_TOKEN  # https://console.apify.com/settings/integrations");
-    process.exit(1);
+  console.log("Executando apify/instagram-scraper via API REST...");
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(actorInput),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Apify API ${response.status}: ${body.slice(0, 500)}`);
   }
 
+  const posts = await response.json();
+  if (!Array.isArray(posts)) {
+    throw new Error("Resposta inesperada da Apify — esperava array de posts.");
+  }
+
+  console.log(`Recebidos ${posts.length} posts do Instagram.`);
+  return posts;
+}
+
+function getImageUrl(post) {
+  return post.displayUrl || post.imageUrl || post.thumbnailUrl || post.images?.[0];
+}
+
+async function main() {
+  const posts = await fetchInstagramPosts();
   mkdirSync(IMAGES_DIR, { recursive: true });
 
   const listings = [];
+  const usedSlugs = new Set();
+
   for (const post of posts) {
     const caption = post.caption || "";
     if (!isListing(caption) || isExcluded(caption)) continue;
 
-    const title = caption.split("\n")[0].replace(/[#@]/g, "").trim().slice(0, 80) || "Imóvel";
-    const slug = slugify(title) || slugify(post.shortCode || post.id);
-    const ext = extname(new URL(post.displayUrl).pathname) || ".jpg";
+    const imageUrl = getImageUrl(post);
+    if (!imageUrl) {
+      console.warn(`Aviso: post ${post.shortCode || post.id} sem imagem, ignorado.`);
+      continue;
+    }
+
+    const title =
+      caption
+        .split("\n")[0]
+        .replace(/[#@]/g, "")
+        .trim()
+        .slice(0, 80) || "Imóvel";
+
+    let slug = slugify(title) || slugify(post.shortCode || post.id || "imovel");
+    if (usedSlugs.has(slug)) slug = `${slug}-${post.shortCode || post.id}`.slice(0, 60);
+    usedSlugs.add(slug);
+
+    const ext = extname(new URL(imageUrl).pathname.split("?")[0]) || ".jpg";
     const filename = `${slug}${ext}`;
     const imagePath = `/properties/${filename}`;
 
     try {
-      await downloadImage(post.displayUrl, join(IMAGES_DIR, filename));
-    } catch {
-      console.warn(`Aviso: não baixou imagem de ${slug}, usando URL remota`);
+      await downloadImage(imageUrl, join(IMAGES_DIR, filename));
+    } catch (err) {
+      console.warn(`Aviso: falha ao baixar imagem de ${slug}: ${err.message}`);
     }
 
     listings.push({
@@ -137,16 +173,21 @@ async function main() {
       slug,
       title,
       location: extractLocation(caption),
-      price: extractPrice(caption),
+      ...(extractPrice(caption) ? { price: extractPrice(caption) } : {}),
       category: guessCategory(caption),
-      badge: /vendido/i.test(caption) ? "Vendido" : "Instagram",
+      badge: /vendido/i.test(caption) ? "Vendido" : "À venda",
       image: imagePath,
-      bedrooms: extractBedrooms(caption),
+      ...(extractBedrooms(caption) ? { bedrooms: extractBedrooms(caption) } : {}),
       area: extractArea(caption) ?? 0,
       features: [],
-      instagramUrl: post.url,
+      instagramUrl: post.url || `https://www.instagram.com/p/${post.shortCode}/`,
       description: caption.slice(0, 280).trim(),
     });
+  }
+
+  if (listings.length === 0) {
+    console.warn("Nenhum imóvel encontrado nos posts — mantendo arquivo anterior.");
+    process.exit(0);
   }
 
   writeFileSync(OUTPUT_JSON, JSON.stringify(listings, null, 2) + "\n");
@@ -154,6 +195,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
+  console.error("\nFalha no sync:", err.message || err);
   process.exit(1);
 });
