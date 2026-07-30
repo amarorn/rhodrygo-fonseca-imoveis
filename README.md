@@ -38,6 +38,26 @@ npm run build
 npm start
 ```
 
+## Deploy no GitHub Pages
+
+O workflow `.github/workflows/deploy-github-pages.yml` publica automaticamente a cada push na branch `main`.
+
+### Configuração no GitHub (uma vez)
+
+1. Vá em **Settings → Pages**
+2. Em **Source**, selecione **GitHub Actions**
+3. Faça push na branch `main` — o deploy roda automaticamente
+
+**URL do site:** [https://amarorn.github.io/rhodrygo-fonseca-imoveis/](https://amarorn.github.io/rhodrygo-fonseca-imoveis/)
+
+### Build local (mesmo modo do CI)
+
+```bash
+npm run build:gh-pages
+```
+
+Os arquivos estáticos são gerados na pasta `out/`.
+
 ## Estrutura do Projeto
 
 ```
