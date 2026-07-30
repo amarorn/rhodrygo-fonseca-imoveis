@@ -17,21 +17,15 @@ interface LogoProps {
 
 const variantConfig: Record<
   LogoVariant,
-  { src: string; width: number; height: number; className: string; animate: boolean }
+  { className: string; height: string }
 > = {
   footer: {
-    src: SITE.logo.png,
-    width: 659,
-    height: 571,
-    className: "h-16 w-auto sm:h-20 brightness-0 invert",
-    animate: true,
+    className: "brightness-0 invert",
+    height: "h-16 w-auto sm:h-20",
   },
   hero: {
-    src: SITE.logo.png,
-    width: 659,
-    height: 571,
-    className: "h-24 w-auto sm:h-32",
-    animate: true,
+    className: "",
+    height: "h-24 w-auto sm:h-32",
   },
 };
 
@@ -41,68 +35,97 @@ export function Logo({
   priority = false,
 }: LogoProps) {
   const config = variantConfig[variant];
-  const containerRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
-  const playedRef = useRef(false);
-
-  const playAnimation = () => {
-    if (!imageRef.current || !config.animate) return;
-
-    if (playedRef.current || prefersReducedMotion()) {
-      gsap.set(imageRef.current, { opacity: 1, y: 0 });
-      return;
-    }
-
-    playedRef.current = true;
-    registerGSAP();
-
-    gsap.fromTo(
-      imageRef.current,
-      { opacity: 0, y: 16, scale: 0.95 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power3.out" }
-    );
-  };
+  const rootRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const shineRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const root = rootRef.current;
+    const logo = logoRef.current;
+    const shine = shineRef.current;
+    if (!root || !logo) return;
 
-    if (priority) {
-      const timer = window.setTimeout(playAnimation, 80);
-      return () => window.clearTimeout(timer);
-    }
+    registerGSAP();
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          playAnimation();
-          observer.disconnect();
+    const ctx = gsap.context(() => {
+      const run = () => {
+        if (prefersReducedMotion()) {
+          gsap.set(logo, { opacity: 1, y: 0, scale: 1 });
+          return;
         }
-      },
-      { threshold: 0.3 }
-    );
 
-    observer.observe(container);
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [variant, priority]);
+        gsap
+          .timeline()
+          .fromTo(
+            logo,
+            { opacity: 0, y: 16, scale: 0.95 },
+            { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power3.out" }
+          )
+          .add(() => {
+            gsap.to(logo, {
+              y: -4,
+              duration: 3.5,
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut",
+            });
+
+            if (shine) {
+              gsap.set(shine, { x: "-120%" });
+              gsap.to(shine, {
+                x: "220%",
+                duration: 2.6,
+                repeat: -1,
+                repeatDelay: 3,
+                ease: "power2.inOut",
+              });
+            }
+          }, 0.4);
+      };
+
+      if (priority) {
+        run();
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            run();
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.3 }
+      );
+
+      observer.observe(root);
+    }, root);
+
+    return () => ctx.revert();
+  }, [priority]);
 
   return (
     <div
-      ref={containerRef}
-      className={cn("inline-flex items-center", config.className, className)}
+      ref={rootRef}
+      className={cn("relative overflow-hidden", config.height, className)}
       role="img"
       aria-label={SITE.logo.alt}
     >
-      <div ref={imageRef} className="opacity-0">
+      <div ref={logoRef} className={cn("relative h-full opacity-0", config.className)}>
         <Image
-          src={config.src}
+          src={SITE.logo.png}
           alt={SITE.logo.alt}
-          width={config.width}
-          height={config.height}
+          width={658}
+          height={568}
           priority={priority}
-          className="h-full w-auto object-contain"
+          unoptimized
+          className="h-full w-auto object-contain object-left"
           sizes="320px"
+        />
+        <div
+          ref={shineRef}
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 w-[45%] bg-gradient-to-r from-transparent via-rf-gold/20 to-transparent"
         />
       </div>
     </div>

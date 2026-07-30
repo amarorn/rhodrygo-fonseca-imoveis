@@ -15,8 +15,8 @@ export const SITE = {
   logo: {
     src: "/images/rhodrygo_logo_animavel.svg",
     png: "/images/logo-rhodrygo-fonseca-transparent.png",
-    monogram: "/images/logo-monogram.png",
     pngOriginal: "/images/logo-rhodrygo-fonseca.png",
+    monogram: "/images/logo-monogram.png",
     alt: "Rhodrygo Fonseca - Corretor de Imóveis",
   },
 } as const;
