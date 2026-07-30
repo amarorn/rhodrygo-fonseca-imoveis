@@ -47,7 +47,7 @@ export function About() {
             <p className="mb-4 leading-relaxed text-gray-600">
               Sou corretor de imóveis apaixonado por conectar pessoas aos seus
               lares ideais. Com mais de uma década de experiência no mercado
-              pernambucano, já ajudei centenas de famílias a realizar o sonho da
+              potiguar, já ajudei centenas de famílias a realizar o sonho da
               casa própria.
             </p>
             <p className="mb-8 leading-relaxed text-gray-600">

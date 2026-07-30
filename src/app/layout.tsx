@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { MetaPixel } from "@/components/MetaPixel";
 import { SITE } from "@/lib/constants";
 import "./globals.css";
 
@@ -24,8 +25,8 @@ export const metadata: Metadata = {
   description:
     "Corretor de imóveis especializado em encontrar o imóvel dos seus sonhos. Atendimento personalizado, as melhores oportunidades do mercado.",
   keywords: [
-    "corretor de imóveis recife",
-    "imóveis pernambuco",
+    "corretor de imóveis natal",
+    "imóveis rio grande do norte",
     "comprar imóvel",
     "vender imóvel",
   ],
@@ -56,6 +57,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${playfair.variable} ${montserrat.variable}`}>
       <body className="font-sans antialiased">
+        <MetaPixel />
         <Providers>{children}</Providers>
       </body>
     </html>

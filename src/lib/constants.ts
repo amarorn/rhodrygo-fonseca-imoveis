@@ -1,7 +1,6 @@
 import type {
   ContactInfo,
   FAQItem,
-  Property,
   PropertyCategory,
   Step,
   Testimonial,
@@ -11,7 +10,7 @@ import type {
 export const SITE = {
   name: "Rhodrygo Fonseca",
   title: "Corretor de Imóveis",
-  creci: "CRECI-PE 00000",
+  creci: "CRECI-RN 9453",
   logo: {
     src: "/images/rhodrygo_logo_animavel.svg",
     png: "/images/logo-rhodrygo-fonseca-transparent.png",
@@ -22,12 +21,18 @@ export const SITE = {
 } as const;
 
 export const CONTACT: ContactInfo = {
-  whatsapp: "(81) 99999-9999",
-  whatsappLink: "https://wa.me/5581999999999",
+  whatsapp: "(84) 98125-7444",
+  whatsappLink: "https://wa.me/5584981257444",
   email: "contato@rhodrygofonseca.com.br",
-  address: "Recife, PE - Boa Viagem",
+  address: "Natal, RN",
   schedule: "Seg-Sex 8h-18h, Sáb 9h-13h",
 };
+
+export const INSTAGRAM_URL = "https://www.instagram.com/rhodrygofonseca/" as const;
+
+/** Link para bio do Instagram com UTM de rastreamento */
+export const INSTAGRAM_BIO_LINK =
+  "https://amarorn.github.io/rhodrygo-fonseca-imoveis/?utm_source=instagram&utm_medium=bio&utm_campaign=rhodrygo" as const;
 
 export const NAV_LINKS = [
   { label: "Início", href: "#inicio" },
@@ -46,92 +51,7 @@ export const PROPERTY_CATEGORIES: { value: PropertyCategory; label: string }[] =
   { value: "comercial", label: "Comercial" },
 ];
 
-export const PROPERTIES: Property[] = [
-  {
-    id: "1",
-    slug: "apartamento-luxo-boa-viagem",
-    title: "Apartamento de Luxo",
-    location: "Boa Viagem, Recife - PE",
-    price: 450000,
-    category: "apartamentos",
-    badge: "Destaque",
-    image:
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 85,
-    parking: 2,
-  },
-  {
-    id: "2",
-    slug: "casa-moderna-casa-forte",
-    title: "Casa Moderna",
-    location: "Casa Forte, Recife - PE",
-    price: 680000,
-    category: "casas",
-    badge: "Novo",
-    image:
-      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 220,
-    parking: 3,
-  },
-  {
-    id: "3",
-    slug: "apartamento-vista-mar-piedade",
-    title: "Apartamento Vista Mar",
-    location: "Piedade, Jaboatão - PE",
-    price: 320000,
-    category: "apartamentos",
-    badge: "Vista Mar",
-    image:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-    bedrooms: 2,
-    bathrooms: 1,
-    area: 65,
-    parking: 1,
-  },
-  {
-    id: "4",
-    slug: "terreno-condominio-parnamirim",
-    title: "Terreno Condomínio Fechado",
-    location: "Parnamirim, Recife - PE",
-    price: 180000,
-    category: "terrenos",
-    badge: "Oportunidade",
-    image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80",
-    area: 450,
-  },
-  {
-    id: "5",
-    slug: "sala-comercial-centro-recife",
-    title: "Sala Comercial",
-    location: "Centro, Recife - PE",
-    price: 250000,
-    category: "comercial",
-    badge: "Investimento",
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
-    area: 45,
-  },
-  {
-    id: "6",
-    slug: "casa-praia-porto-de-galinhas",
-    title: "Casa de Praia",
-    location: "Porto de Galinhas, PE",
-    price: 890000,
-    category: "casas",
-    badge: "Exclusivo",
-    image:
-      "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&q=80",
-    bedrooms: 5,
-    bathrooms: 4,
-    area: 350,
-    features: ["Piscina"],
-  },
-];
+export { PROPERTIES } from "@/lib/properties";
 
 export const TESTIMONIALS: Testimonial[] = [
   {
@@ -189,7 +109,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: "4",
     question: "Você atende em quais cidades?",
     answer:
-      "Atendo principalmente Recife e Região Metropolitana, incluindo Jaboatão, Olinda, Paulista e Cabo de Santo Agostinho. Também tenho imóveis no litoral sul, como Porto de Galinhas.",
+      "Atendo Natal e Região Metropolitana, incluindo Pipa, Macaíba, São Miguel do Gostoso e Ponta Negra. Acompanhe novos imóveis também no Instagram @rhodrygofonseca.",
   },
   {
     id: "5",

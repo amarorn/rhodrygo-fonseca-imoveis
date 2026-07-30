@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { ContactCard } from "@/components/ContactCard";
 import { LeadForm } from "@/components/LeadForm";
-import { CONTACT } from "@/lib/constants";
+import { CONTACT, INSTAGRAM_URL } from "@/lib/constants";
 import { buildWhatsAppLink } from "@/lib/utils";
 import {
   InstagramIcon,
@@ -18,7 +18,7 @@ import {
 } from "@/components/SocialIcons";
 
 const SOCIAL = [
-  { icon: InstagramIcon, href: "https://instagram.com", label: "Instagram" },
+  { icon: InstagramIcon, href: INSTAGRAM_URL, label: "Instagram" },
   { icon: FacebookIcon, href: "https://facebook.com", label: "Facebook" },
   { icon: LinkedinIcon, href: "https://linkedin.com", label: "LinkedIn" },
   { icon: YoutubeIcon, href: "https://youtube.com", label: "YouTube" },

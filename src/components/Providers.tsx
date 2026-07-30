@@ -7,6 +7,7 @@ import { LenisProvider, useLenisScroll } from "@/components/LenisProvider";
 import { CustomCursor } from "@/components/CustomCursor";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
+import { UtmCapture } from "@/components/UtmCapture";
 
 function ScrollBridge() {
   const ctx = useLenisScroll();
@@ -37,6 +38,7 @@ function GlobalUI() {
   return (
     <>
       <ScrollBridge />
+      <UtmCapture />
       <CustomCursor />
       <WhatsAppFloat />
       <ExitIntentModal isOpen={isOpen} onClose={close} />

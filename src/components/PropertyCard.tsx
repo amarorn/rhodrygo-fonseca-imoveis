@@ -1,9 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Bed, Bath, Maximize, Car, MessageCircle, MapPin } from "lucide-react";
+import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink, cn } from "@/lib/utils";
+import { buildPropertyUtm, trackLead } from "@/lib/analytics";
 
 interface PropertyCardProps {
   property: Property;
@@ -11,8 +14,19 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property, className }: PropertyCardProps) {
-  const whatsappMessage = `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${formatPrice(property.price)})`;
-  const whatsappHref = buildWhatsAppLink(whatsappMessage);
+  const priceLabel = formatPrice(property.price);
+  const utm = buildPropertyUtm(property.slug);
+  const whatsappMessage = property.price
+    ? `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${priceLabel}). Vi no seu site.`
+    : `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location}. Vi no seu site e gostaria de saber o valor.`;
+  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm);
+
+  const handleWhatsAppClick = () => {
+    trackLead("Lead", {
+      content_name: property.title,
+      content_category: property.category,
+    });
+  };
 
   return (
     <article
@@ -21,14 +35,16 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
         className
       )}
     >
-      <div
-        className="relative aspect-[3/2] overflow-hidden"
+      <Link
+        href={`/imoveis/${property.slug}`}
+        className="relative block aspect-[3/2] overflow-hidden"
         data-cursor="image"
       >
         <Image
           src={property.image}
           alt={property.title}
           fill
+          unoptimized
           className="object-cover transition-transform duration-500 group-hover:scale-[1.08]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
@@ -36,14 +52,16 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
           {property.badge}
         </span>
         <span className="absolute bottom-3 right-3 rounded-lg bg-rf-navy/90 px-3 py-1.5 text-sm font-bold text-white backdrop-blur-sm transition-transform duration-200 group-hover:scale-105">
-          {formatPrice(property.price)}
+          {priceLabel}
         </span>
-      </div>
+      </Link>
 
       <div className="p-5">
-        <h3 className="mb-1 font-display text-lg font-semibold text-rf-navy">
-          {property.title}
-        </h3>
+        <Link href={`/imoveis/${property.slug}`}>
+          <h3 className="mb-1 font-display text-lg font-semibold text-rf-navy transition-colors hover:text-rf-gold">
+            {property.title}
+          </h3>
+        </Link>
         <p className="mb-3 flex items-center gap-1 text-sm text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0 text-rf-gold" />
           {property.location}
@@ -68,22 +86,36 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
               <Car className="h-3.5 w-3.5" /> {property.parking} vagas
             </span>
           )}
-          {property.features?.map((f) => (
+          {property.features?.slice(0, 2).map((f) => (
             <span key={f} className="rounded-full bg-rf-cream px-2 py-0.5">
               {f}
             </span>
           ))}
         </div>
 
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-rf-whatsapp py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          <MessageCircle className="h-4 w-4" fill="currentColor" strokeWidth={0} />
-          Quero Saber Mais
-        </a>
+        <div className="flex gap-2">
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleWhatsAppClick}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rf-whatsapp py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            <MessageCircle className="h-4 w-4" fill="currentColor" strokeWidth={0} />
+            Quero Saber Mais
+          </a>
+          {property.instagramUrl && (
+            <a
+              href={property.instagramUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Ver ${property.title} no Instagram`}
+              className="flex items-center justify-center rounded-xl border border-gray-200 px-3 text-rf-navy transition-colors hover:border-rf-gold hover:text-rf-gold"
+            >
+              <InstagramIcon className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </div>
     </article>
   );

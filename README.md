@@ -58,16 +58,46 @@ npm run build:gh-pages
 
 Os arquivos estáticos são gerados na pasta `out/`.
 
+## Imóveis do Instagram
+
+Os imóveis em destaque vêm do perfil [@rhodrygofonseca](https://www.instagram.com/rhodrygofonseca/). Cada um tem página de detalhe em `/imoveis/[slug]`.
+
+### Sincronizar automaticamente
+
+```bash
+# Requer Apify CLI autenticado
+npm install -g apify-cli
+apify login --token SEU_TOKEN
+npm run sync:instagram
+```
+
+O workflow `.github/workflows/sync-instagram.yml` roda toda segunda-feira (ou manualmente) se você adicionar o secret `APIFY_TOKEN` no GitHub.
+
+### Rastreamento (Meta Pixel + UTM)
+
+1. Copie `.env.example` → `.env.local`
+2. Cole o ID do Meta Pixel em `NEXT_PUBLIC_META_PIXEL_ID`
+3. Use na bio do Instagram:
+
+```
+https://amarorn.github.io/rhodrygo-fonseca-imoveis/?utm_source=instagram&utm_medium=bio&utm_campaign=rhodrygo
+```
+
 ## Estrutura do Projeto
 
 ```
 src/
-├── app/           # Layout, página principal, estilos globais
+├── app/           # Layout, home, páginas /imoveis/[slug]
+├── data/          # properties.json (imóveis sincronizados)
 ├── sections/      # Seções da home (Hero, Imóveis, FAQ, etc.)
 ├── components/    # Componentes reutilizáveis
 ├── hooks/         # Hooks customizados (Lenis, scroll, exit intent)
-├── lib/           # Utilitários, animações e dados mock
+├── lib/           # Utilitários, analytics, properties
 └── types/         # Tipos TypeScript
+scripts/
+└── sync-instagram-properties.mjs
+public/
+└── properties/    # Imagens dos imóveis
 ```
 
 ## Seções
@@ -90,6 +120,9 @@ src/
 - Cursor customizado (desktop only)
 - Smooth scroll com Lenis
 - Filtro de imóveis por categoria
+- Páginas de detalhe por imóvel (`/imoveis/[slug]`)
+- Imóveis reais do Instagram com sync via Apify
+- Meta Pixel e captura de UTM para rastrear leads
 
 ## Paleta de Cores
 

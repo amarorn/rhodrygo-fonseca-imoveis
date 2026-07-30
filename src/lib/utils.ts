@@ -1,11 +1,14 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { CONTACT } from "@/lib/constants";
+import type { UtmParams } from "@/lib/analytics";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number): string {
+export function formatPrice(price?: number | null): string {
+  if (price == null || price <= 0) return "Consulte";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -13,9 +16,14 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
-export function buildWhatsAppLink(message: string): string {
-  const encoded = encodeURIComponent(message);
-  return `https://wa.me/5581999999999?text=${encoded}`;
+export function buildWhatsAppLink(message: string, utm?: UtmParams): string {
+  let finalMessage = message;
+  if (utm?.source || utm?.campaign) {
+    const parts = [utm.source, utm.medium, utm.campaign].filter(Boolean);
+    finalMessage += `\n\n[Ref: ${parts.join(" / ")}]`;
+  }
+  const encoded = encodeURIComponent(finalMessage);
+  return `${CONTACT.whatsappLink}?text=${encoded}`;
 }
 
 export function scrollToSection(id: string, offset = 80) {

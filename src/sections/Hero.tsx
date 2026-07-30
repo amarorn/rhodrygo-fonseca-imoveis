@@ -189,7 +189,7 @@ export function Hero() {
             className="mb-8 max-w-xl text-lg text-white/80"
           >
             Atendimento personalizado para encontrar o imóvel perfeito para você
-            e sua família. As melhores oportunidades do mercado pernambucano.
+            e sua família. As melhores oportunidades do mercado potiguar.
           </p>
 
           <div ref={statsRef} className="mb-8 flex gap-8">

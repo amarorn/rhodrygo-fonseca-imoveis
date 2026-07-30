@@ -185,7 +185,7 @@ function HeroForm({
         <input
           {...register("region")}
           className={cn(inputClass, errors.region && errorClass)}
-          placeholder="Ex: Boa Viagem, Recife"
+          placeholder="Ex: Ponta Negra, Natal"
         />
       </Field>
       <SubmitButton loading={isSubmitting} label={submitLabel} />

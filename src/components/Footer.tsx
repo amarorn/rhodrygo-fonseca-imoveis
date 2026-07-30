@@ -1,7 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/Logo";
-import { NAV_LINKS, SITE } from "@/lib/constants";
+import { NAV_LINKS, SITE, INSTAGRAM_URL } from "@/lib/constants";
 import { LeadForm } from "@/components/LeadForm";
 import { scrollToSection } from "@/lib/utils";
 import {
@@ -20,7 +20,7 @@ const SERVICES = [
 ];
 
 const SOCIAL = [
-  { icon: InstagramIcon, href: "https://instagram.com", label: "Instagram" },
+  { icon: InstagramIcon, href: INSTAGRAM_URL, label: "Instagram" },
   { icon: FacebookIcon, href: "https://facebook.com", label: "Facebook" },
   { icon: LinkedinIcon, href: "https://linkedin.com", label: "LinkedIn" },
   { icon: YoutubeIcon, href: "https://youtube.com", label: "YouTube" },
@@ -41,7 +41,7 @@ export function Footer() {
             </div>
             <p className="text-sm text-white/70">
               Encontre o imóvel dos seus sonhos com atendimento personalizado e as
-              melhores oportunidades do mercado pernambucano.
+              melhores oportunidades do mercado potiguar.
             </p>
           </div>
 

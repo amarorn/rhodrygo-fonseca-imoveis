@@ -1,0 +1,43 @@
+name: Sync Instagram Properties
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 8 * * 1"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Apify CLI
+        run: npm install -g apify-cli
+
+      - name: Sync properties from Instagram
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: |
+          apify login --token "$APIFY_TOKEN"
+          node scripts/sync-instagram-properties.mjs
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/data/properties.json public/properties/
+          if git diff --staged --quiet; then
+            echo "Nenhuma alteração detectada."
+          else
+            git commit -m "chore: sync imóveis do Instagram"
+            git push
+          fi

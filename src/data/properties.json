@@ -1,0 +1,72 @@
+[
+  {
+    "id": "ig-shamballa",
+    "slug": "apartamento-shamballa-gostoso",
+    "title": "Apartamento Condomínio Shamballa",
+    "location": "São Miguel do Gostoso, RN",
+    "price": 490000,
+    "category": "apartamentos",
+    "badge": "À venda",
+    "image": "/properties/shamballa-gostoso.jpg",
+    "bedrooms": 2,
+    "area": 63,
+    "features": ["Varanda", "Condomínio fechado"],
+    "instagramUrl": "https://www.instagram.com/rhodrygofonseca/reel/DadFm4QRvex/",
+    "description": "Apartamento de 63 m² com 2 quartos e varanda no Condomínio Shamballa. Condomínio R$ 305/mês e IPTU R$ 332/ano. Excelente oportunidade em São Miguel do Gostoso."
+  },
+  {
+    "id": "ig-duplex",
+    "slug": "duplex-alto-padrao-mobiliado",
+    "title": "Duplex Alto Padrão Mobiliado",
+    "location": "Natal, RN",
+    "category": "casas",
+    "badge": "Alto padrão",
+    "image": "/properties/duplex-alto-padrao.jpg",
+    "bedrooms": 4,
+    "bathrooms": 3,
+    "area": 350,
+    "features": ["Mobiliado", "Jacuzzi", "Piscina", "Academia", "Sauna"],
+    "instagramUrl": "https://www.instagram.com/rhodrygofonseca/reel/DaZKnh_tMoy/",
+    "description": "Duplex mobiliado de 350 m² com 4 dormitórios (3 suítes), cozinha americana e jacuzzi privativa. Condomínio com piscina, academia e sauna."
+  },
+  {
+    "id": "ig-ponta-negra",
+    "slug": "apartamento-ponta-negra",
+    "title": "Apartamento Ponta Negra",
+    "location": "Ponta Negra, Natal - RN",
+    "category": "apartamentos",
+    "badge": "Vista",
+    "image": "/properties/ponta-negra-natal.jpg",
+    "area": 79,
+    "features": ["Vista", "Piscina", "Academia", "Espaço gourmet"],
+    "instagramUrl": "https://www.instagram.com/rhodrygofonseca/reel/DZnxjp7vX73/",
+    "description": "Apartamento de 79 m² em Ponta Negra com vista privilegiada. Condomínio completo com piscina, academia e espaço gourmet."
+  },
+  {
+    "id": "ig-triplex-pipa",
+    "slug": "triplex-pipa-luxo",
+    "title": "Triplex de Luxo",
+    "location": "Pipa, RN",
+    "category": "casas",
+    "badge": "Luxo",
+    "image": "/properties/triplex-pipa.jpg",
+    "area": 120,
+    "features": ["Porteira fechada", "Empreendimento de luxo"],
+    "instagramUrl": "https://www.instagram.com/rhodrygofonseca/reel/DYpa-qkx7dz/",
+    "description": "Triplex de 120 m² porteira fechada em empreendimento de luxo em Pipa. Ideal para quem busca exclusividade no litoral sul."
+  },
+  {
+    "id": "ig-lote-horizontes",
+    "slug": "lote-condominio-horizontes-macaiba",
+    "title": "Lote Condomínio Horizontes",
+    "location": "Macaíba, RN",
+    "price": 110000,
+    "category": "terrenos",
+    "badge": "Oportunidade",
+    "image": "/properties/lote-horizontes-macaiba.jpg",
+    "area": 250,
+    "features": ["Infraestrutura completa", "Condomínio fechado"],
+    "instagramUrl": "https://www.instagram.com/rhodrygofonseca/reel/DYURAVKuxQ0/",
+    "description": "Lote de 250 m² no Condomínio Horizontes, Macaíba. Infraestrutura completa e excelente custo-benefício para construir sua casa."
+  }
+]

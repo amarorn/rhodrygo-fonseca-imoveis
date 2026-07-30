@@ -10,7 +10,7 @@ export interface Property {
   slug: string;
   title: string;
   location: string;
-  price: number;
+  price?: number;
   category: Exclude<PropertyCategory, "todos">;
   badge: string;
   image: string;
@@ -19,6 +19,8 @@ export interface Property {
   area: number;
   parking?: number;
   features?: string[];
+  instagramUrl?: string;
+  description?: string;
 }
 
 export interface Testimonial {
