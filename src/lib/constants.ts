@@ -28,11 +28,13 @@ export const CONTACT: ContactInfo = {
   schedule: "Seg-Sex 8h-18h, Sáb 9h-13h",
 };
 
+import { SITE_URL } from "@/lib/site";
+
 export const INSTAGRAM_URL = "https://www.instagram.com/rhodrygofonseca/" as const;
 
 /** Link para bio do Instagram com UTM de rastreamento */
 export const INSTAGRAM_BIO_LINK =
-  "https://amarorn.github.io/rhodrygo-fonseca-imoveis/?utm_source=instagram&utm_medium=bio&utm_campaign=rhodrygo" as const;
+  `${SITE_URL}/?utm_source=instagram&utm_medium=bio&utm_campaign=rhodrygo` as const;
 
 export const NAV_LINKS = [
   { label: "Início", href: "#inicio" },

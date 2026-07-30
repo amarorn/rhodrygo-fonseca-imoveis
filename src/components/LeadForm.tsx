@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INTEREST_OPTIONS, PRICE_RANGES, PROPERTY_TYPES } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
+import { trackLead } from "@/lib/analytics";
 import type { FormVariant } from "@/types";
 
 const baseSchema = z.object({
@@ -115,6 +116,7 @@ function HeroForm({
 
   const onSubmit = async (data: HeroFormData) => {
     await new Promise((r) => setTimeout(r, 800));
+    trackLead("Lead", { content_name: "hero_form", content_category: data.propertyType ?? "geral" });
     showToast("Recebemos seus dados! Entraremos em contato em breve.");
     reset();
   };
@@ -211,6 +213,7 @@ function ContactForm({
 
   const onSubmit = async () => {
     await new Promise((r) => setTimeout(r, 800));
+    trackLead("Lead", { content_name: "contact_form" });
     showToast("Mensagem enviada com sucesso! Responderemos em breve.");
     reset();
   };
@@ -299,6 +302,7 @@ function SimpleForm({
 
   const onSubmit = async () => {
     await new Promise((r) => setTimeout(r, 800));
+    trackLead("Lead", { content_name: "ebook_form" });
     showToast("E-book enviado! Verifique seu e-mail.");
     reset();
     onSuccess?.();
@@ -365,6 +369,7 @@ function NewsletterForm({
 
   const onSubmit = async () => {
     await new Promise((r) => setTimeout(r, 600));
+    trackLead("Lead", { content_name: "newsletter_form" });
     showToast("Inscrição realizada com sucesso!");
     reset();
   };
