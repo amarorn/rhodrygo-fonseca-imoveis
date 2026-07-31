@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bed, Bath, Maximize, Car, MessageCircle, MapPin } from "lucide-react";
 import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
-import { formatPrice, buildWhatsAppLink, cn } from "@/lib/utils";
+import { formatPrice, buildWhatsAppLink, cn, stripEmojis, truncateText } from "@/lib/utils";
 import { assetPath } from "@/lib/site";
 import { buildPropertyUtm, trackLead } from "@/lib/analytics";
 
@@ -35,6 +35,9 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
     .filter(Boolean)
     .join(", ");
 
+  const cleanTitle = stripEmojis(property.title);
+  const teaser = property.description ? truncateText(property.description, 100) : "";
+
   const specItems = [
     property.bedrooms != null && property.bedrooms > 0
       ? { icon: Bed, label: `${property.bedrooms} qts` }
@@ -55,7 +58,10 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
   return (
     <article
       className={cn(
-        "group flex flex-col self-start overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+        "group relative flex flex-col self-start overflow-hidden rounded-2xl bg-white",
+        "shadow-[0_4px_16px_rgba(15,23,42,0.06)]",
+        "transition-[transform,box-shadow] duration-300 ease-out",
+        "hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(15,23,42,0.14)]",
         className
       )}
     >
@@ -69,52 +75,59 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
           alt={property.title}
           fill
           unoptimized
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
-        <span className="absolute left-3 top-3 rounded-full bg-rf-gold px-2.5 py-0.5 text-[11px] font-semibold text-rf-navy">
+        <div className="absolute inset-0 bg-gradient-to-t from-rf-navy/50 via-transparent to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-80" />
+
+        <span className="absolute left-3 top-3 rounded-full bg-rf-gold px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-rf-navy shadow-sm">
           {property.badge}
         </span>
-        <span className="absolute bottom-3 right-3 rounded-lg bg-rf-navy/90 px-2.5 py-1 text-sm font-bold text-white backdrop-blur-sm">
+        <span className="absolute bottom-3 right-3 rounded-xl bg-white/95 px-3 py-1.5 text-sm font-bold text-rf-navy shadow-lg backdrop-blur-sm">
           {priceLabel}
+        </span>
+        <span className="absolute bottom-3 left-3 rounded-lg bg-rf-navy/80 px-2.5 py-1 text-[11px] font-medium capitalize text-white/90 backdrop-blur-sm">
+          {locationLabel}
         </span>
       </Link>
 
-      <div className="flex flex-col p-4">
+      <div className="flex flex-1 flex-col p-4">
         <Link href={`/imoveis/${property.slug}`} className="mb-2 block">
-          <h3 className="line-clamp-2 font-display text-base font-semibold leading-snug text-rf-navy transition-colors hover:text-rf-gold">
-            {property.title}
+          <h3 className="line-clamp-2 font-display text-lg font-semibold leading-snug text-rf-navy transition-colors duration-200 group-hover:text-rf-gold">
+            {cleanTitle}
           </h3>
         </Link>
 
-        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-gray-600">
-          <span className="inline-flex items-center gap-1 capitalize text-gray-500">
-            <MapPin className="h-3.5 w-3.5 shrink-0 text-rf-gold" />
-            {locationLabel}
-          </span>
+        {teaser && (
+          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-gray-600">
+            {teaser}
+          </p>
+        )}
+
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-medium text-gray-600">
           {specItems.map(({ icon: Icon, label }) => (
-            <span key={label} className="inline-flex items-center gap-1">
-              <Icon className="h-3.5 w-3.5 shrink-0 text-rf-gold/80" />
+            <span key={label} className="inline-flex items-center gap-1.5">
+              <Icon className="h-3.5 w-3.5 shrink-0 text-rf-gold" />
               {label}
             </span>
           ))}
           {featureItems.map((feature) => (
             <span
               key={feature}
-              className="rounded-full bg-rf-cream px-2 py-0.5 text-[11px] font-medium text-rf-navy/80"
+              className="rounded-full bg-rf-cream px-2 py-0.5 text-[11px] font-semibold text-rf-navy/80"
             >
               {feature}
             </span>
           ))}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <div className="mt-auto flex gap-2 pt-1">
           <a
             href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleWhatsAppClick}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rf-whatsapp py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rf-whatsapp px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-rf-whatsapp/20 transition-all duration-200 hover:translate-y-[-1px] hover:bg-[#1ebd5b] hover:shadow-lg active:translate-y-0"
           >
             <MessageCircle className="h-4 w-4" fill="currentColor" strokeWidth={0} />
             Quero Saber Mais
@@ -125,7 +138,7 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Ver ${property.title} no Instagram`}
-              className="flex shrink-0 items-center justify-center rounded-xl border border-gray-200 px-3 text-rf-navy transition-colors hover:border-rf-gold hover:text-rf-gold"
+              className="flex shrink-0 items-center justify-center rounded-xl border border-gray-200 px-3.5 text-rf-navy transition-all duration-200 hover:border-rf-gold hover:bg-rf-gold/5 hover:text-rf-gold"
             >
               <InstagramIcon className="h-4 w-4" />
             </a>

@@ -43,9 +43,12 @@ function slugify(text) {
 }
 
 function extractPrice(text) {
-  const m = text.match(/R\$\s*([\d.]+(?:,\d{2})?)/i);
-  if (!m) return undefined;
-  return Number(m[1].replace(/\./g, "").replace(",", "."));
+  // Formato "R$ 110.000,00" ou "R$ 720 mil"
+  const match = text.match(/R\$\s*([\d.]+(?:,\d{2})?)\s*(mil)?/i);
+  if (!match) return undefined;
+  let value = Number(match[1].replace(/\./g, "").replace(",", "."));
+  if (match[2] && /mil/i.test(match[2])) value *= 1000;
+  return value;
 }
 
 function extractArea(text) {
@@ -77,12 +80,45 @@ function guessCategory(text) {
   return "casas";
 }
 
+const LISTING_KEYWORDS = [
+  /vende[- ]?se/i,
+  /à venda/i,
+  /a venda/i,
+  /vendo/i,
+  /venda r\$/i,
+  /aluga[- ]?se/i,
+  /oportunidade.*imóvel/i,
+  /imóvel.*à venda/i,
+  /apartamento.*(?:à )?venda/i,
+  /casa.*(?:à )?venda/i,
+  /lote.*(?:à )?venda/i,
+  /terreno.*(?:à )?venda/i,
+  /duplex/i,
+  /triplex/i,
+  /condomínio.*(?:venda|horizontes|shamballa|maxmil)/i,
+  /m².*(?:r\$|venda)/i,
+  /r\$.*m²/i,
+  /investir.*condomínio/i,
+];
+
 function isListing(caption) {
-  return /vend|imóvel|apart|casa|lote|terreno|duplex|triplex|condomínio|m²/i.test(caption);
+  const t = caption.toLowerCase();
+  if (/planejamento inteligente|estratégia.*imóvel|você não precisa de sorte|dica do corretor|bom dia|frase do dia/i.test(t)) {
+    return false;
+  }
+  return LISTING_KEYWORDS.some((re) => re.test(t));
 }
 
 function isExcluded(caption) {
-  return /vendido|consórcio|crédito imobiliário|porto seguro|simulação/i.test(caption);
+  const t = caption.toLowerCase();
+  if (/vendido|consórcio|crédito imobiliário|porto seguro|simulação|parceria|divulgação/i.test(t)) {
+    return true;
+  }
+  // Frases de marketing sem imóvel específico
+  if (/enquanto você decide|eu busco o melhor imóvel|planejamento inteligente|estrategia/i.test(t) && !/vende|à venda|vendo|r\$/i.test(t)) {
+    return true;
+  }
+  return false;
 }
 
 function downloadImage(url, dest) {

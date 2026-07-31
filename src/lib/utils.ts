@@ -26,6 +26,25 @@ export function buildWhatsAppLink(message: string, utm?: UtmParams): string {
   return `${CONTACT.whatsappLink}?text=${encoded}`;
 }
 
+const EMOJI_REGEX =
+  /[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]|[\uFE0F]|[\u{1F1E6}-\u{1F1FF}]|[\u{200D}]/gu;
+
+/** Remove emojis e normaliza espaços do texto. */
+export function stripEmojis(text: string): string {
+  return text
+    .replace(EMOJI_REGEX, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Trunca texto com reticências sem cortar palavra. */
+export function truncateText(text: string, maxLength: number): string {
+  const clean = stripEmojis(text);
+  if (clean.length <= maxLength) return clean;
+  const cut = clean.slice(0, maxLength).replace(/\s+\S*$/, "");
+  return cut.endsWith("…") ? cut : `${cut}…`;
+}
+
 export function scrollToSection(id: string, offset = 80) {
   const element = document.getElementById(id);
   if (!element) return;

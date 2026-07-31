@@ -11,7 +11,7 @@ import type { PropertyCategory } from "@/types";
 export function Properties() {
   const [activeCategory, setActiveCategory] = useState<PropertyCategory>("todos");
   const gridRef = useRef<HTMLDivElement>(null);
-  const animatedRef = useRef(false);
+  const hasAnimatedIn = useRef(false);
 
   const filtered =
     activeCategory === "todos"
@@ -21,26 +21,48 @@ export function Properties() {
   useEffect(() => {
     registerGSAP();
     const grid = gridRef.current;
-    if (!grid || animatedRef.current) return;
+    if (!grid || hasAnimatedIn.current) return;
+
+    const items = Array.from(grid.children) as HTMLElement[];
+    if (items.length === 0) return;
+
+    if (prefersReducedMotion()) {
+      hasAnimatedIn.current = true;
+      return;
+    }
+
+    gsap.set(items, { opacity: 0, y: 28, scale: 0.98 });
+
+    const animateIn = () => {
+      hasAnimatedIn.current = true;
+      gsap.to(items, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.55,
+        stagger: 0.07,
+        ease: "power3.out",
+        overwrite: true,
+      });
+    };
+
+    const rect = grid.getBoundingClientRect();
+    const viewportH = window.innerHeight || document.documentElement.clientHeight;
+    if (rect.top < viewportH * 0.85 && rect.bottom > 0) {
+      animateIn();
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && !animatedRef.current) {
-            animatedRef.current = true;
-            if (!prefersReducedMotion()) {
-              gsap.from(grid.children, {
-                y: 40,
-                opacity: 0,
-                duration: 0.6,
-                stagger: 0.1,
-                ease: "power2.out",
-              });
-            }
+          if (entry.isIntersecting && !hasAnimatedIn.current) {
+            animateIn();
+            observer.disconnect();
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.15 }
     );
 
     observer.observe(grid);
@@ -49,14 +71,12 @@ export function Properties() {
 
   useEffect(() => {
     const grid = gridRef.current;
-    if (!grid || !animatedRef.current) return;
-
-    if (prefersReducedMotion()) return;
+    if (!grid || !hasAnimatedIn.current || prefersReducedMotion()) return;
 
     gsap.fromTo(
       grid.children,
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out" }
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.35, stagger: 0.04, ease: "power2.out" }
     );
   }, [activeCategory]);
 
@@ -73,15 +93,15 @@ export function Properties() {
           </p>
         </div>
 
-        <div className="mb-10 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="mb-8 flex flex-wrap justify-center gap-2">
           {PROPERTY_CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setActiveCategory(cat.value)}
               className={cn(
-                "shrink-0 rounded-full px-5 py-2 text-sm font-medium transition-all duration-200",
+                "shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200",
                 activeCategory === cat.value
-                  ? "scale-[1.02] bg-rf-navy text-white shadow-md"
+                  ? "bg-rf-navy text-white shadow-md"
                   : "bg-white text-gray-600 hover:bg-gray-100"
               )}
             >
