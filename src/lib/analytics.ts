@@ -26,6 +26,26 @@ function persistGeo(geo: GeoParams): GeoParams {
 
 const UTM_STORAGE_KEY = "rf_utm";
 const GEO_STORAGE_KEY = "rf_geo";
+const PAGE_VIEWS_KEY = "rf_page_views";
+const PROPERTY_VIEWS_KEY = "rf_property_views";
+const MAX_PAGE_VIEWS = 20;
+const MAX_PROPERTY_VIEWS = 10;
+
+export type ViewedProperty = {
+  id: string;
+  slug: string;
+  title: string;
+  location?: string;
+  price?: number;
+  category?: string;
+  viewedAt: string;
+};
+
+export type MetaClickIds = {
+  fbp?: string;
+  fbc?: string;
+  fbclid?: string;
+};
 
 export function captureUtmFromUrl(): UtmParams | null {
   if (typeof window === "undefined") return null;
@@ -37,6 +57,14 @@ export function captureUtmFromUrl(): UtmParams | null {
     campaign: params.get("utm_campaign") ?? undefined,
     content: params.get("utm_content") ?? undefined,
   };
+
+  const fbclid = params.get("fbclid");
+  if (fbclid) {
+    // Formato _fbc da Meta: fb.1.<timestamp>.<fbclid>
+    const fbc = `fb.1.${Date.now()}.${fbclid}`;
+    document.cookie = `_fbc=${encodeURIComponent(fbc)}; path=/; max-age=7776000; SameSite=Lax`;
+    sessionStorage.setItem("rf_fbclid", fbclid);
+  }
 
   if (!utm.source && !utm.medium && !utm.campaign && !utm.content) {
     return getStoredUtm();
@@ -403,4 +431,76 @@ export function buildPropertyUtm(propertySlug: string): UtmParams {
     medium: "property_card",
     campaign: propertySlug,
   };
+}
+
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`)
+  );
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+/** Cookies Meta para Conversions API / matching (_fbp, _fbc). */
+export function getMetaClickIds(): MetaClickIds {
+  if (typeof window === "undefined") return {};
+  return {
+    fbp: getCookie("_fbp"),
+    fbc: getCookie("_fbc"),
+    fbclid: sessionStorage.getItem("rf_fbclid") ?? undefined,
+  };
+}
+
+/** Registra página visitada na sessão (para enriquecer o lead). */
+export function trackSessionPageView(path?: string): string[] {
+  if (typeof window === "undefined") return [];
+  const page = path ?? `${window.location.pathname}${window.location.search}`;
+  const prev = getSessionPageViews();
+  const next = [...prev.filter((p) => p !== page), page].slice(-MAX_PAGE_VIEWS);
+  sessionStorage.setItem(PAGE_VIEWS_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function getSessionPageViews(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(PAGE_VIEWS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Lembra imóveis vistos na sessão (ordem: mais recente por último). */
+export function rememberPropertyView(
+  property: Omit<ViewedProperty, "viewedAt">
+): ViewedProperty[] {
+  if (typeof window === "undefined") return [];
+  const entry: ViewedProperty = {
+    ...property,
+    viewedAt: new Date().toISOString(),
+  };
+  const prev = getViewedProperties().filter((p) => p.slug !== property.slug);
+  const next = [...prev, entry].slice(-MAX_PROPERTY_VIEWS);
+  sessionStorage.setItem(PROPERTY_VIEWS_KEY, JSON.stringify(next));
+  return next;
+}
+
+export function getViewedProperties(): ViewedProperty[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = sessionStorage.getItem(PROPERTY_VIEWS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as ViewedProperty[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function getLastViewedProperty(): ViewedProperty | null {
+  const list = getViewedProperties();
+  return list.length ? list[list.length - 1] : null;
 }

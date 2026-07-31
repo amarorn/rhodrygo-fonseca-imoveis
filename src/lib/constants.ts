@@ -201,3 +201,18 @@ export const INTEREST_OPTIONS = [
   "Avaliação gratuita",
   "Outro",
 ] as const;
+
+export const URGENCY_OPTIONS = [
+  "Imediato (até 30 dias)",
+  "1 a 3 meses",
+  "3 a 6 meses",
+  "Só pesquisando",
+] as const;
+
+export const BEDROOM_OPTIONS = [
+  "1",
+  "2",
+  "3",
+  "4+",
+  "Não se aplica",
+] as const;

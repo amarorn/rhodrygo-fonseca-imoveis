@@ -5,7 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { INTEREST_OPTIONS, PRICE_RANGES, PROPERTY_TYPES } from "@/lib/constants";
+import {
+  BEDROOM_OPTIONS,
+  INTEREST_OPTIONS,
+  PRICE_RANGES,
+  PROPERTY_TYPES,
+  URGENCY_OPTIONS,
+} from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { submitLead } from "@/lib/leads";
 import type { FormVariant } from "@/types";
@@ -18,13 +24,16 @@ const baseSchema = z.object({
 const heroSchema = baseSchema.extend({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   propertyType: z.string().min(1, "Selecione o tipo"),
+  bedrooms: z.string().min(1, "Selecione os quartos"),
   priceRange: z.string().min(1, "Selecione a faixa de preço"),
   region: z.string().min(2, "Informe a região"),
+  urgency: z.string().min(1, "Selecione a urgência"),
 });
 
 const contactSchema = baseSchema.extend({
   whatsapp: z.string().min(10, "WhatsApp inválido"),
   interest: z.string().min(1, "Selecione o interesse"),
+  urgency: z.string().min(1, "Selecione a urgência"),
   message: z.string().min(10, "Mensagem deve ter pelo menos 10 caracteres"),
 });
 
@@ -98,6 +107,13 @@ export function LeadForm({
   );
 }
 
+function toastForTemperature(temperature: string): string {
+  if (temperature === "quente") {
+    return "Lead priorizado! Abrindo WhatsApp para atendimento rápido.";
+  }
+  return "Dados enviados! Abrindo WhatsApp para finalizar o atendimento.";
+}
+
 function HeroForm({
   className,
   submitLabel = "Quero encontrar meu imóvel",
@@ -115,16 +131,18 @@ function HeroForm({
   } = useForm<HeroFormData>({ resolver: zodResolver(heroSchema) });
 
   const onSubmit = async (data: HeroFormData) => {
-    await submitLead({
+    const result = await submitLead({
       source: "hero_form",
       name: data.name,
       email: data.email,
       whatsapp: data.whatsapp,
       propertyType: data.propertyType,
+      bedrooms: data.bedrooms,
       priceRange: data.priceRange,
       region: data.region,
+      urgency: data.urgency,
     });
-    showToast("Dados enviados! Abrindo WhatsApp para finalizar o atendimento.");
+    showToast(toastForTemperature(result.temperature));
     reset();
   };
 
@@ -155,25 +173,43 @@ function HeroForm({
           {...register("whatsapp")}
           type="tel"
           className={cn(inputClass, errors.whatsapp && errorClass)}
-          placeholder="(81) 99999-9999"
+          placeholder="(84) 99999-9999"
         />
       </Field>
-      <Field label="Tipo de Imóvel" error={errors.propertyType?.message}>
-        <select
-          {...register("propertyType")}
-          className={cn(inputClass, errors.propertyType && errorClass)}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Selecione
-          </option>
-          {PROPERTY_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Tipo de Imóvel" error={errors.propertyType?.message}>
+          <select
+            {...register("propertyType")}
+            className={cn(inputClass, errors.propertyType && errorClass)}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Selecione
             </option>
-          ))}
-        </select>
-      </Field>
+            {PROPERTY_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Quartos" error={errors.bedrooms?.message}>
+          <select
+            {...register("bedrooms")}
+            className={cn(inputClass, errors.bedrooms && errorClass)}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Selecione
+            </option>
+            {BEDROOM_OPTIONS.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
       <Field label="Faixa de Preço" error={errors.priceRange?.message}>
         <select
           {...register("priceRange")}
@@ -197,6 +233,22 @@ function HeroForm({
           placeholder="Ex: Ponta Negra, Natal"
         />
       </Field>
+      <Field label="Quando pretende fechar?" error={errors.urgency?.message}>
+        <select
+          {...register("urgency")}
+          className={cn(inputClass, errors.urgency && errorClass)}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Selecione
+          </option>
+          {URGENCY_OPTIONS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </Field>
       <SubmitButton loading={isSubmitting} label={submitLabel} />
     </form>
   );
@@ -219,15 +271,20 @@ function ContactForm({
   } = useForm<ContactFormData>({ resolver: zodResolver(contactSchema) });
 
   const onSubmit = async (data: ContactFormData) => {
-    await submitLead({
+    const result = await submitLead({
       source: "contact_form",
       name: data.name,
       email: data.email,
       whatsapp: data.whatsapp,
       interest: data.interest,
+      urgency: data.urgency,
       message: data.message,
     });
-    showToast("Mensagem enviada! Abrindo WhatsApp para falar com o corretor.");
+    showToast(
+      result.temperature === "quente"
+        ? "Mensagem enviada! Lead quente — abrindo WhatsApp."
+        : "Mensagem enviada! Abrindo WhatsApp para falar com o corretor."
+    );
     reset();
   };
 
@@ -260,7 +317,7 @@ function ContactForm({
             {...register("whatsapp")}
             type="tel"
             className={cn(inputClass, errors.whatsapp && errorClass)}
-            placeholder="(81) 99999-9999"
+            placeholder="(84) 99999-9999"
           />
         </Field>
         <Field label="Interesse" error={errors.interest?.message}>
@@ -280,6 +337,22 @@ function ContactForm({
           </select>
         </Field>
       </div>
+      <Field label="Quando pretende fechar?" error={errors.urgency?.message}>
+        <select
+          {...register("urgency")}
+          className={cn(inputClass, errors.urgency && errorClass)}
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Selecione
+          </option>
+          {URGENCY_OPTIONS.map((u) => (
+            <option key={u} value={u}>
+              {u}
+            </option>
+          ))}
+        </select>
+      </Field>
       <Field label="Mensagem" error={errors.message?.message}>
         <textarea
           {...register("message")}
@@ -357,7 +430,7 @@ function SimpleForm({
           {...register("whatsapp")}
           type="tel"
           className={cn(inputClass, errors.whatsapp && errorClass)}
-          placeholder="(81) 99999-9999"
+          placeholder="(84) 99999-9999"
         />
       </Field>
       <SubmitButton loading={isSubmitting} label={submitLabel} />

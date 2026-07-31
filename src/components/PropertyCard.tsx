@@ -7,7 +7,7 @@ import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink, cn, stripEmojis, truncateText } from "@/lib/utils";
 import { assetPath } from "@/lib/site";
-import { buildPropertyUtm, trackLead } from "@/lib/analytics";
+import { buildPropertyUtm, rememberPropertyView, trackLead } from "@/lib/analytics";
 import { useGeo } from "@/hooks/useGeo";
 
 interface PropertyCardProps {
@@ -25,9 +25,18 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
   const whatsappHref = buildWhatsAppLink(whatsappMessage, utm, geo ?? undefined);
 
   const handleWhatsAppClick = () => {
+    rememberPropertyView({
+      id: property.id,
+      slug: property.slug,
+      title: property.title,
+      location: property.location,
+      price: property.price,
+      category: property.category,
+    });
     trackLead("Lead", {
       content_name: property.title,
       content_category: property.category,
+      content_ids: property.id,
     });
   };
 
