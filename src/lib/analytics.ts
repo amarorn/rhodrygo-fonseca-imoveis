@@ -44,30 +44,68 @@ export function getStoredUtm(): UtmParams | null {
   }
 }
 
-/** Detecta cidade/estado/país por IP (ipapi.co) e salva em sessionStorage. */
-export async function captureGeoFromIp(): Promise<GeoParams | null> {
-  if (typeof window === "undefined") return null;
+type GeoProvider = () => Promise<GeoParams | null>;
 
-  const cached = getStoredGeo();
-  if (cached) return cached;
-
-  try {
+const geoProviders: GeoProvider[] = [
+  async () => {
     const res = await fetch("https://ipapi.co/json/", {
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`ipapi ${res.status}`);
     const data = await res.json();
-    const geo: GeoParams = {
+    if (data.error) throw new Error(data.reason ?? "ipapi error");
+    return {
       city: data.city ?? undefined,
       region: data.region ?? undefined,
       country: data.country_name ?? undefined,
     };
-    sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
-    notifyGeo(geo);
-    return geo;
-  } catch {
-    return null;
+  },
+  async () => {
+    const res = await fetch("https://ipwho.is/");
+    if (!res.ok) throw new Error(`ipwho ${res.status}`);
+    const data = await res.json();
+    if (!data.success) throw new Error("ipwho failed");
+    return {
+      city: data.city ?? undefined,
+      region: data.region ?? undefined,
+      country: data.country ?? undefined,
+    };
+  },
+  async () => {
+    const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
+    if (!res.ok) throw new Error(`geojs ${res.status}`);
+    const data = await res.json();
+    return {
+      city: data.city ?? undefined,
+      region: data.region ?? undefined,
+      country: data.country ?? undefined,
+    };
+  },
+];
+
+/** Detecta cidade/estado/país por IP (com fallbacks) e salva em sessionStorage. */
+export async function captureGeoFromIp(): Promise<GeoParams | null> {
+  if (typeof window === "undefined") return null;
+
+  const cached = getStoredGeo();
+  if (cached) {
+    notifyGeo(cached);
+    return cached;
   }
+
+  for (const provider of geoProviders) {
+    try {
+      const geo = await provider();
+      if (!geo || (!geo.city && !geo.region)) continue;
+      sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
+      notifyGeo(geo);
+      return geo;
+    } catch {
+      // tenta próximo provedor
+    }
+  }
+
+  return null;
 }
 
 export function getStoredGeo(): GeoParams | null {

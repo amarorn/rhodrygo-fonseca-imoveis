@@ -6,7 +6,7 @@ import { MapPin } from "lucide-react";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PROPERTIES, PROPERTY_CATEGORIES } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
-import { buildWhatsAppLink, cn, citiesMatch } from "@/lib/utils";
+import { buildWhatsAppLink, cn, citiesMatch, propertyGeoScore } from "@/lib/utils";
 import { useGeo } from "@/hooks/useGeo";
 import type { PropertyCategory, Property } from "@/types";
 
@@ -22,18 +22,17 @@ export function Properties() {
       ? PROPERTIES
       : PROPERTIES.filter((p) => p.category === activeCategory);
 
-  // Reordena: imóveis na cidade do usuário primeiro
+  // Reordena: imóveis mais próximos da região do usuário primeiro
   const sorted = [...filtered].sort((a, b) => {
-    if (!userCity) return 0;
-    const aMatch = citiesMatch(userCity, a.location);
-    const bMatch = citiesMatch(userCity, b.location);
-    if (aMatch && !bMatch) return -1;
-    if (!aMatch && bMatch) return 1;
-    return 0;
+    if (!userCity && !geo?.region) return 0;
+    return (
+      propertyGeoScore(b.location, userCity, geo?.region) -
+      propertyGeoScore(a.location, userCity, geo?.region)
+    );
   });
 
   const localCount = userCity
-    ? sorted.filter((p) => citiesMatch(userCity, p.location)).length
+    ? sorted.filter((p) => citiesMatch(userCity, p.location) || propertyGeoScore(p.location, userCity, geo?.region) >= 2).length
     : 0;
 
   useEffect(() => {

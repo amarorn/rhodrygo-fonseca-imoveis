@@ -25,12 +25,82 @@ export function normalizeCity(city: string): string {
     .trim();
 }
 
+/** Bairros/cidades da Grande Natal e litoral RN tratados como mesma região. */
+const NATAL_METRO = [
+  "natal",
+  "ponta negra",
+  "macaiba",
+  "parnamirim",
+  "sao goncalo do amarante",
+  "extremoz",
+  "ceara-mirim",
+];
+
+const RN_COAST = [
+  ...NATAL_METRO,
+  "pipa",
+  "tibau do sul",
+  "sao miguel do gostoso",
+  "smg",
+  "touros",
+  "rio do fogo",
+];
+
+function locationTokens(location: string): string[] {
+  const norm = normalizeCity(location);
+  return norm.split(/[\/,\-–|]+/).map((p) => p.trim()).filter(Boolean);
+}
+
+function isInGroup(value: string, group: string[]): boolean {
+  const tokens = locationTokens(value);
+  const joined = tokens.join(" ");
+  return group.some(
+    (city) =>
+      joined.includes(city) ||
+      tokens.some((t) => t.includes(city) || city.includes(t))
+  );
+}
+
 /** Verifica se a cidade do usuário bate com a cidade do imóvel. */
 export function citiesMatch(userCity: string | undefined, propertyLocation: string): boolean {
   if (!userCity) return false;
   const userNorm = normalizeCity(userCity);
   const propNorm = normalizeCity(propertyLocation);
-  return propNorm.includes(userNorm) || userNorm.includes(propNorm.split(",")[0] ?? "");
+  if (propNorm.includes(userNorm) || userNorm.includes(propNorm.split(",")[0] ?? "")) {
+    return true;
+  }
+  // Grande Natal: Natal ↔ Ponta Negra ↔ Macaíba etc.
+  if (isInGroup(userCity, NATAL_METRO) && isInGroup(propertyLocation, NATAL_METRO)) {
+    return true;
+  }
+  return false;
+}
+
+/** True se usuário ou imóvel estão no RN / litoral onde o corretor atua. */
+export function isRnRegion(city?: string, region?: string): boolean {
+  const hay = normalizeCity([city, region].filter(Boolean).join(" "));
+  if (!hay) return false;
+  if (hay.includes("rio grande do norte") || hay === "rn" || hay.includes(" rn")) {
+    return true;
+  }
+  return isInGroup(hay, RN_COAST);
+}
+
+/**
+ * Pontua relevância do imóvel para o visitante.
+ * 3 = cidade exata / grande natal, 2 = mesmo estado RN, 1 = demais.
+ */
+export function propertyGeoScore(
+  propertyLocation: string,
+  userCity?: string,
+  userRegion?: string
+): number {
+  if (userCity && citiesMatch(userCity, propertyLocation)) return 3;
+  if (isRnRegion(userCity, userRegion) && isRnRegion(propertyLocation)) return 2;
+  if (userRegion && normalizeCity(propertyLocation).includes(normalizeCity(userRegion))) {
+    return 2;
+  }
+  return 1;
 }
 
 export function buildWhatsAppLink(
