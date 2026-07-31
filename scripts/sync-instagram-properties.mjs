@@ -204,20 +204,162 @@ function imageExtension(url) {
   }
 }
 
+function normalizeText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function postShortCode(post) {
+  if (post.shortCode) return String(post.shortCode);
+  const url = post.url || "";
+  const m = url.match(/\/(?:p|reel)\/([^/?#]+)/i);
+  return m?.[1] || "";
+}
+
+/**
+ * Mesmo imóvel republicado em posts diferentes (ex.: triplex Pipa, sala CTC).
+ * Retorna chave estável ou null se não houver regra.
+ */
+function softDuplicateKey(caption, location) {
+  const t = normalizeText(caption);
+  const loc = normalizeText(location);
+
+  // Mesmo empreendimento republicado como "triplex" ou "casa" em Pipa
+  if (
+    (/pipa/.test(t) || /pipa/.test(loc)) &&
+    (/triplex/.test(t) ||
+      /porteira\s*fechada/.test(t) ||
+      (/belissima\s*casa/.test(t) && /maxmil/.test(t)) ||
+      (/casa/.test(t) && /maxmil/.test(t) && /nordeste|praia/.test(t)))
+  ) {
+    return "soft:pipa-maxmil-residencial";
+  }
+  if (
+    /sala/.test(t) &&
+    /comercial/.test(t) &&
+    (/ctc|corporate\s*tower/.test(t) || /ctc|corporate/.test(loc))
+  ) {
+    return "soft:sala-ctc";
+  }
+  if (/lote|terreno/.test(t) && /horizontes/.test(t)) {
+    return "soft:lote-horizontes";
+  }
+  if (/terramaris/.test(t)) return "soft:terramaris";
+  if (/shamballa/.test(t)) return "soft:shamballa";
+  if (/duplex/.test(t) && /alto\s*padrao/.test(t)) return "soft:duplex-alto-padrao";
+  if (/chacara/.test(t) && /comercial/.test(t)) return "soft:chacara-comercial";
+  if (/maxmil/.test(t) && (/gostoso|smg/.test(t) || /gostoso|smg/.test(loc))) {
+    return "soft:maxmil-smg";
+  }
+  return null;
+}
+
+function listingQualityScore(listing) {
+  const photos = listing.images?.length || (listing.image ? 1 : 0);
+  const hasPrice = listing.price ? 1 : 0;
+  const hasArea = listing.area > 0 ? 1 : 0;
+  const descLen = (listing.description || "").length;
+  // Preferir mais fotos e dados; id maior ≈ post mais recente
+  return photos * 1000 + hasPrice * 200 + hasArea * 50 + Math.min(descLen, 200) + Number(listing.id || 0) / 1e16;
+}
+
+function badgeFromCaption(caption) {
+  if (/vendido/i.test(caption)) return "Vendido";
+  if (/aluga[- ]?se|para\s+alugar|aluguel/i.test(caption) && !/vende[- ]?se|à venda|a venda/i.test(caption)) {
+    return "Para alugar";
+  }
+  if (/vende[- ]?se|à venda|a venda|vendo/i.test(caption) && /aluga[- ]?se|aluguel/i.test(caption)) {
+    return "Venda / Aluguel";
+  }
+  return "À venda";
+}
+
+function mergeListingData(keep, drop) {
+  if (!keep.price && drop.price) keep.price = drop.price;
+  if (!(keep.area > 0) && drop.area > 0) keep.area = drop.area;
+  if (!keep.bedrooms && drop.bedrooms) keep.bedrooms = drop.bedrooms;
+  if ((drop.images?.length || 0) > (keep.images?.length || 0)) {
+    keep.images = drop.images;
+    keep.image = drop.image;
+  }
+  return keep;
+}
+
+/**
+ * Remove republicações do mesmo imóvel.
+ * Hard: id / shortCode. Soft: fingerprint (triplex Pipa, sala CTC, etc.).
+ */
+function dedupeListings(listings) {
+  const kept = [];
+  const hardIndex = new Map(); // hardKey -> index in kept
+  const softIndex = new Map(); // softKey -> index in kept
+
+  for (const item of listings) {
+    const shortCode =
+      item.instagramUrl?.match(/\/(?:p|reel)\/([^/?#]+)/i)?.[1] || "";
+    const hardKey = item.id || (shortCode ? `sc:${shortCode}` : `slug:${item.slug}`);
+    const softKey = softDuplicateKey(
+      `${item.title}\n${item.description || ""}`,
+      item.location
+    );
+
+    const replaceAt = (idx, reason) => {
+      const prev = kept[idx];
+      const preferNew = listingQualityScore(item) > listingQualityScore(prev);
+      const keep = preferNew ? item : prev;
+      const drop = preferNew ? prev : item;
+      mergeListingData(keep, drop);
+      console.log(`  dedupe ${reason}: mantém ${keep.slug} (descarta ${drop.slug})`);
+      kept[idx] = keep;
+      hardIndex.set(hardKey, idx);
+      if (softKey) softIndex.set(softKey, idx);
+    };
+
+    if (hardIndex.has(hardKey)) {
+      replaceAt(hardIndex.get(hardKey), "hard");
+      continue;
+    }
+    if (softKey && softIndex.has(softKey)) {
+      replaceAt(softIndex.get(softKey), softKey);
+      continue;
+    }
+
+    const idx = kept.length;
+    kept.push(item);
+    hardIndex.set(hardKey, idx);
+    if (softKey) softIndex.set(softKey, idx);
+  }
+
+  return kept;
+}
+
 async function main() {
   const posts = await fetchInstagramPosts();
   mkdirSync(IMAGES_DIR, { recursive: true });
 
   const listings = [];
   const usedSlugs = new Set();
+  const seenPostKeys = new Set();
 
   for (const post of posts) {
     const caption = post.caption || "";
     if (!isListing(caption) || isExcluded(caption)) continue;
 
+    const shortCode = postShortCode(post);
+    const hardKey = String(post.id || "") || (shortCode ? `sc:${shortCode}` : "");
+    if (hardKey && seenPostKeys.has(hardKey)) {
+      console.log(`  skip post duplicado na API: ${hardKey}`);
+      continue;
+    }
+    if (hardKey) seenPostKeys.add(hardKey);
+
     const imageUrls = getImageUrls(post);
     if (imageUrls.length === 0) {
-      console.warn(`Aviso: post ${post.shortCode || post.id} sem imagem, ignorado.`);
+      console.warn(`Aviso: post ${shortCode || post.id} sem imagem, ignorado.`);
       continue;
     }
 
@@ -228,8 +370,8 @@ async function main() {
         .trim()
         .slice(0, 80) || "Imóvel";
 
-    let slug = slugify(title) || slugify(post.shortCode || post.id || "imovel");
-    if (usedSlugs.has(slug)) slug = `${slug}-${post.shortCode || post.id}`.slice(0, 60);
+    let slug = slugify(title) || slugify(shortCode || post.id || "imovel");
+    if (usedSlugs.has(slug)) slug = `${slug}-${shortCode || post.id}`.slice(0, 60);
     usedSlugs.add(slug);
 
     const localImages = [];
@@ -262,24 +404,28 @@ async function main() {
       location: extractLocation(caption),
       ...(extractPrice(caption) ? { price: extractPrice(caption) } : {}),
       category: guessCategory(caption),
-      badge: /vendido/i.test(caption) ? "Vendido" : "À venda",
+      badge: badgeFromCaption(caption),
       image: localImages[0],
       images: localImages,
       ...(extractBedrooms(caption) ? { bedrooms: extractBedrooms(caption) } : {}),
       area: extractArea(caption) ?? 0,
       features: [],
-      instagramUrl: post.url || `https://www.instagram.com/p/${post.shortCode}/`,
+      instagramUrl: post.url || (shortCode ? `https://www.instagram.com/p/${shortCode}/` : undefined),
       description: caption.slice(0, 280).trim(),
     });
   }
 
-  if (listings.length === 0) {
+  const unique = dedupeListings(listings);
+
+  if (unique.length === 0) {
     console.warn("Nenhum imóvel encontrado nos posts — mantendo arquivo anterior.");
     process.exit(0);
   }
 
-  writeFileSync(OUTPUT_JSON, JSON.stringify(listings, null, 2) + "\n");
-  console.log(`\n✓ ${listings.length} imóveis salvos em src/data/properties.json`);
+  writeFileSync(OUTPUT_JSON, JSON.stringify(unique, null, 2) + "\n");
+  console.log(
+    `\n✓ ${unique.length} imóveis salvos (de ${listings.length} posts de anúncio) em src/data/properties.json`
+  );
 }
 
 main().catch((err) => {
