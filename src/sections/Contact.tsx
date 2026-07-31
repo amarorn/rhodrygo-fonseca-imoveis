@@ -47,11 +47,11 @@ export function Contact() {
                 icon={MessageCircle}
                 title="WhatsApp"
                 content={CONTACT.whatsapp}
-          href={buildWhatsAppLink(
-            "Olá Rhodrygo! Gostaria de entrar em contato.",
-            { source: "site", medium: "contact_card", campaign: "contact" },
-            geo ?? undefined
-          )}
+                href={buildWhatsAppLink(
+                  "Olá Rhodrygo! Gostaria de entrar em contato.",
+                  { source: "site", medium: "contact_card", campaign: "contact" },
+                  geo ?? undefined
+                )}
               />
               <ContactCard
                 icon={Mail}

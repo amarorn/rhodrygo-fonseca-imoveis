@@ -8,15 +8,18 @@ import {
   type GeoParams,
 } from "@/lib/analytics";
 
+/**
+ * Sempre inicia em null (igual ao SSR) e só preenche no client
+ * após o mount — evita hydration mismatch.
+ */
 export function useGeo(): GeoParams | null {
-  const [geo, setGeo] = useState<GeoParams | null>(() => getStoredGeo());
+  const [geo, setGeo] = useState<GeoParams | null>(null);
 
   useEffect(() => {
     const stored = getStoredGeo();
     if (stored) {
       setGeo(stored);
     } else {
-      // Garante captura mesmo se UtmCapture ainda não terminou
       void captureGeoFromIp().then((result) => {
         if (result) setGeo(result);
       });

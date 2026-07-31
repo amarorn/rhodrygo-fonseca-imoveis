@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -62,6 +62,7 @@ export function LocationAgent() {
   const [state, setState] = useState<AgentState>("hidden");
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const startedRef = useRef(false);
   const geo = useGeo();
   const userCity = geo?.city;
   const userRegion = geo?.region;
@@ -90,9 +91,9 @@ export function LocationAgent() {
       setState("dismissed");
       return;
     }
-    if (!userCity || suggestions.length === 0) return;
-    if (state !== "hidden") return;
+    if (!userCity || suggestions.length === 0 || startedRef.current) return;
 
+    startedRef.current = true;
     let cancelled = false;
     const typingTimer = setTimeout(() => {
       if (!cancelled) setState("typing");
@@ -105,8 +106,10 @@ export function LocationAgent() {
       cancelled = true;
       clearTimeout(typingTimer);
       clearTimeout(greetTimer);
+      // Permite remount do Strict Mode reiniciar o fluxo
+      startedRef.current = false;
     };
-  }, [userCity, suggestions.length, state]);
+  }, [userCity, suggestions.length]);
 
   if (!userCity || suggestions.length === 0 || state === "hidden" || state === "dismissed") {
     return null;
