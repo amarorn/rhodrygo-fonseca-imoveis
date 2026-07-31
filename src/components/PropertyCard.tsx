@@ -7,7 +7,7 @@ import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink, cn, stripEmojis, truncateText } from "@/lib/utils";
 import { assetPath } from "@/lib/site";
-import { buildPropertyUtm, trackLead } from "@/lib/analytics";
+import { buildPropertyUtm, trackLead, getStoredGeo } from "@/lib/analytics";
 
 interface PropertyCardProps {
   property: Property;
@@ -17,10 +17,11 @@ interface PropertyCardProps {
 export function PropertyCard({ property, className }: PropertyCardProps) {
   const priceLabel = formatPrice(property.price);
   const utm = buildPropertyUtm(property.slug);
+  const geo = getStoredGeo() ?? undefined;
   const whatsappMessage = property.price
     ? `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${priceLabel}). Vi no seu site.`
     : `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location}. Vi no seu site e gostaria de saber o valor.`;
-  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm);
+  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm, geo);
 
   const handleWhatsAppClick = () => {
     trackLead("Lead", {

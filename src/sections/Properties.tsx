@@ -2,21 +2,43 @@
 
 import { useState, useRef, useEffect } from "react";
 import gsap from "gsap";
+import { MapPin } from "lucide-react";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PROPERTIES, PROPERTY_CATEGORIES } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
-import { buildWhatsAppLink, cn } from "@/lib/utils";
-import type { PropertyCategory } from "@/types";
+import { buildWhatsAppLink, cn, citiesMatch } from "@/lib/utils";
+import { getStoredGeo } from "@/lib/analytics";
+import type { PropertyCategory, Property } from "@/types";
 
 export function Properties() {
   const [activeCategory, setActiveCategory] = useState<PropertyCategory>("todos");
+  const [userCity, setUserCity] = useState<string | undefined>(undefined);
   const gridRef = useRef<HTMLDivElement>(null);
   const hasAnimatedIn = useRef(false);
+
+  useEffect(() => {
+    const geo = getStoredGeo();
+    if (geo?.city) setUserCity(geo.city);
+  }, []);
 
   const filtered =
     activeCategory === "todos"
       ? PROPERTIES
       : PROPERTIES.filter((p) => p.category === activeCategory);
+
+  // Reordena: imóveis na cidade do usuário primeiro
+  const sorted = [...filtered].sort((a, b) => {
+    if (!userCity) return 0;
+    const aMatch = citiesMatch(userCity, a.location);
+    const bMatch = citiesMatch(userCity, b.location);
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
+  });
+
+  const localCount = userCity
+    ? sorted.filter((p) => citiesMatch(userCity, p.location)).length
+    : 0;
 
   useEffect(() => {
     registerGSAP();
@@ -91,6 +113,12 @@ export function Properties() {
             Selecionei as melhores oportunidades do mercado para você encontrar
             o imóvel ideal.
           </p>
+          {userCity && localCount > 0 && (
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rf-gold/10 px-4 py-1.5 text-sm font-medium text-rf-navy">
+              <MapPin className="h-4 w-4 text-rf-gold" />
+              {localCount} imóve{localCount === 1 ? "l" : "is"} em {userCity}
+            </p>
+          )}
         </div>
 
         <div className="mb-8 flex flex-wrap justify-center gap-2">
@@ -114,7 +142,7 @@ export function Properties() {
           ref={gridRef}
           className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {filtered.map((property) => (
+          {sorted.map((property) => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>

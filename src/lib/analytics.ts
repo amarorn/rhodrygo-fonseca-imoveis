@@ -5,7 +5,14 @@ export type UtmParams = {
   content?: string;
 };
 
+export type GeoParams = {
+  city?: string;
+  region?: string;
+  country?: string;
+};
+
 const UTM_STORAGE_KEY = "rf_utm";
+const GEO_STORAGE_KEY = "rf_geo";
 
 export function captureUtmFromUrl(): UtmParams | null {
   if (typeof window === "undefined") return null;
@@ -37,6 +44,42 @@ export function getStoredUtm(): UtmParams | null {
   }
 }
 
+/** Detecta cidade/estado/país por IP (ipapi.co) e salva em sessionStorage. */
+export async function captureGeoFromIp(): Promise<GeoParams | null> {
+  if (typeof window === "undefined") return null;
+
+  const cached = getStoredGeo();
+  if (cached) return cached;
+
+  try {
+    const res = await fetch("https://ipapi.co/json/", {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const geo: GeoParams = {
+      city: data.city ?? undefined,
+      region: data.region ?? undefined,
+      country: data.country_name ?? undefined,
+    };
+    sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
+    return geo;
+  } catch {
+    return null;
+  }
+}
+
+export function getStoredGeo(): GeoParams | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(GEO_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as GeoParams;
+  } catch {
+    return null;
+  }
+}
+
 export function appendUtmToUrl(url: string, utm?: UtmParams): string {
   const data = utm ?? getStoredUtm();
   if (!data) return url;
@@ -53,13 +96,16 @@ export function appendUtmToUrl(url: string, utm?: UtmParams): string {
 export function trackLead(eventName: string, params?: Record<string, string>) {
   if (typeof window === "undefined") return;
 
+  const geo = getStoredGeo();
+  const enriched = geo ? { ...params, ...geo } : params;
+
   const fbq = (window as Window & { fbq?: (...args: unknown[]) => void }).fbq;
   if (fbq) {
-    fbq("track", eventName, params);
+    fbq("track", eventName, enriched);
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[analytics]", eventName, params);
+    console.info("[analytics]", eventName, enriched);
   }
 }
 

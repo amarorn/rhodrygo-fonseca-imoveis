@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CONTACT } from "@/lib/constants";
-import type { UtmParams } from "@/lib/analytics";
+import type { UtmParams, GeoParams } from "@/lib/analytics";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,8 +16,32 @@ export function formatPrice(price?: number | null): string {
   }).format(price);
 }
 
-export function buildWhatsAppLink(message: string, utm?: UtmParams): string {
+/** Normaliza string para comparação de cidades (remove acentos, lowercase). */
+export function normalizeCity(city: string): string {
+  return city
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+/** Verifica se a cidade do usuário bate com a cidade do imóvel. */
+export function citiesMatch(userCity: string | undefined, propertyLocation: string): boolean {
+  if (!userCity) return false;
+  const userNorm = normalizeCity(userCity);
+  const propNorm = normalizeCity(propertyLocation);
+  return propNorm.includes(userNorm) || userNorm.includes(propNorm.split(",")[0] ?? "");
+}
+
+export function buildWhatsAppLink(
+  message: string,
+  utm?: UtmParams,
+  geo?: GeoParams
+): string {
   let finalMessage = message;
+  if (geo?.city) {
+    finalMessage += `\n\nEstou em ${geo.city}${geo.region ? `, ${geo.region}` : ""}.`;
+  }
   if (utm?.source || utm?.campaign) {
     const parts = [utm.source, utm.medium, utm.campaign].filter(Boolean);
     finalMessage += `\n\n[Ref: ${parts.join(" / ")}]`;

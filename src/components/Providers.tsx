@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/Toast";
 import { LenisProvider, useLenisScroll } from "@/components/LenisProvider";
 import { CustomCursor } from "@/components/CustomCursor";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
+import { LocationAgent } from "@/components/LocationAgent";
 import { ExitIntentModal } from "@/components/ExitIntentModal";
 import { UtmCapture } from "@/components/UtmCapture";
 
@@ -41,6 +42,7 @@ function GlobalUI() {
       <UtmCapture />
       <CustomCursor />
       <WhatsAppFloat />
+      <LocationAgent />
       <ExitIntentModal isOpen={isOpen} onClose={close} />
     </>
   );
