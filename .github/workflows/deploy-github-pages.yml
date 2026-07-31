@@ -39,6 +39,7 @@ jobs:
           NEXT_PUBLIC_BASE_PATH: /rhodrygo-fonseca-imoveis
           NEXT_PUBLIC_SITE_URL: https://amarorn.github.io/rhodrygo-fonseca-imoveis
           NEXT_PUBLIC_META_PIXEL_ID: ${{ secrets.NEXT_PUBLIC_META_PIXEL_ID }}
+          NEXT_PUBLIC_LEADS_WEBHOOK_URL: ${{ secrets.NEXT_PUBLIC_LEADS_WEBHOOK_URL }}
 
       - name: Add .nojekyll
         run: touch out/.nojekyll

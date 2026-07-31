@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INTEREST_OPTIONS, PRICE_RANGES, PROPERTY_TYPES } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
-import { trackLead } from "@/lib/analytics";
+import { submitLead } from "@/lib/leads";
 import type { FormVariant } from "@/types";
 
 const baseSchema = z.object({
@@ -115,9 +115,16 @@ function HeroForm({
   } = useForm<HeroFormData>({ resolver: zodResolver(heroSchema) });
 
   const onSubmit = async (data: HeroFormData) => {
-    await new Promise((r) => setTimeout(r, 800));
-    trackLead("Lead", { content_name: "hero_form", content_category: data.propertyType ?? "geral" });
-    showToast("Recebemos seus dados! Entraremos em contato em breve.");
+    await submitLead({
+      source: "hero_form",
+      name: data.name,
+      email: data.email,
+      whatsapp: data.whatsapp,
+      propertyType: data.propertyType,
+      priceRange: data.priceRange,
+      region: data.region,
+    });
+    showToast("Dados enviados! Abrindo WhatsApp para finalizar o atendimento.");
     reset();
   };
 
@@ -211,10 +218,16 @@ function ContactForm({
     formState: { errors, isSubmitting },
   } = useForm<ContactFormData>({ resolver: zodResolver(contactSchema) });
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 800));
-    trackLead("Lead", { content_name: "contact_form" });
-    showToast("Mensagem enviada com sucesso! Responderemos em breve.");
+  const onSubmit = async (data: ContactFormData) => {
+    await submitLead({
+      source: "contact_form",
+      name: data.name,
+      email: data.email,
+      whatsapp: data.whatsapp,
+      interest: data.interest,
+      message: data.message,
+    });
+    showToast("Mensagem enviada! Abrindo WhatsApp para falar com o corretor.");
     reset();
   };
 
@@ -300,10 +313,14 @@ function SimpleForm({
     formState: { errors, isSubmitting },
   } = useForm<SimpleFormData>({ resolver: zodResolver(simpleSchema) });
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 800));
-    trackLead("Lead", { content_name: "ebook_form" });
-    showToast("E-book enviado! Verifique seu e-mail.");
+  const onSubmit = async (data: SimpleFormData) => {
+    await submitLead({
+      source: variant === "exit-intent" ? "exit_intent_form" : "ebook_form",
+      name: data.name,
+      email: data.email,
+      whatsapp: data.whatsapp,
+    });
+    showToast("Dados recebidos! Abrindo WhatsApp para enviar o material.");
     reset();
     onSuccess?.();
   };
@@ -367,9 +384,11 @@ function NewsletterForm({
     formState: { errors, isSubmitting },
   } = useForm<NewsletterFormData>({ resolver: zodResolver(newsletterSchema) });
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 600));
-    trackLead("Lead", { content_name: "newsletter_form" });
+  const onSubmit = async (data: NewsletterFormData) => {
+    await submitLead(
+      { source: "newsletter_form", email: data.email },
+      { openWhatsApp: false }
+    );
     showToast("Inscrição realizada com sucesso!");
     reset();
   };

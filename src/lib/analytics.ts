@@ -356,7 +356,19 @@ export function appendUtmToUrl(url: string, utm?: UtmParams): string {
   return parsed.toString();
 }
 
-export function trackLead(eventName: string, params?: Record<string, string>) {
+/** Dados de Advanced Matching (Meta hasheia automaticamente no browser). */
+export type PixelUserData = {
+  em?: string;
+  ph?: string;
+  fn?: string;
+  ln?: string;
+};
+
+export function trackLead(
+  eventName: string,
+  params?: Record<string, string>,
+  userData?: PixelUserData
+) {
   if (typeof window === "undefined") return;
 
   const geo = getStoredGeo();
@@ -373,11 +385,15 @@ export function trackLead(eventName: string, params?: Record<string, string>) {
 
   const fbq = (window as Window & { fbq?: (...args: unknown[]) => void }).fbq;
   if (fbq) {
-    fbq("track", eventName, enriched);
+    if (userData && (userData.em || userData.ph || userData.fn)) {
+      fbq("track", eventName, enriched ?? {}, userData);
+    } else {
+      fbq("track", eventName, enriched);
+    }
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.info("[analytics]", eventName, enriched);
+    console.info("[analytics]", eventName, enriched, userData);
   }
 }
 

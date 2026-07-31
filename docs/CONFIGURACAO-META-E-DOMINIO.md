@@ -88,10 +88,23 @@ https://rhodrygofonseca.com.br/?utm_source=instagram&utm_medium=bio&utm_campaign
 
 ---
 
+### Captura de leads (e-mail / WhatsApp)
+
+O Pixel **não devolve** e-mail de visitantes. Os formulários do site capturam os dados e:
+
+1. Enviam o evento `Lead` com Advanced Matching
+2. Gravam na planilha (se `NEXT_PUBLIC_LEADS_WEBHOOK_URL` estiver setado)
+3. Abrem o WhatsApp do corretor com a mensagem pronta
+
+Passo a passo: [`docs/CAPTURAR-LEADS.md`](./CAPTURAR-LEADS.md)
+
+---
+
 ## 3. Checklist final
 
 - [ ] Pixel criado no Meta Events Manager
 - [ ] Secret `NEXT_PUBLIC_META_PIXEL_ID` no GitHub
+- [ ] Webhook de leads (opcional) — ver `docs/CAPTURAR-LEADS.md`
 - [ ] DNS apontando para GitHub Pages
 - [ ] Custom domain verificado no GitHub
 - [ ] HTTPS ativo

@@ -103,6 +103,11 @@ O workflow `.github/workflows/sync-instagram.yml` roda toda segunda-feira (ou ma
 https://amarorn.github.io/rhodrygo-fonseca-imoveis/?utm_source=instagram&utm_medium=bio&utm_campaign=rhodrygo
 ```
 
+### Leads automáticos (WhatsApp + planilha)
+
+Ao enviar o formulário, o site abre o WhatsApp do corretor com os dados e pode gravar na Google Sheets.  
+Guia: [`docs/CAPTURAR-LEADS.md`](docs/CAPTURAR-LEADS.md)
+
 ## Estrutura do Projeto
 
 ```
