@@ -12,6 +12,7 @@ import {
 import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink } from "@/lib/utils";
+import { getStoredGeo } from "@/lib/analytics";
 import { assetPath } from "@/lib/site";
 import { buildPropertyUtm } from "@/lib/analytics";
 
@@ -25,7 +26,7 @@ export function PropertyDetailView({ property }: PropertyDetailViewProps) {
   const whatsappMessage = property.price
     ? `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${priceLabel}). Vi a página do imóvel no site.`
     : `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location}. Vi a página do imóvel no site e gostaria de saber o valor.`;
-  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm);
+  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm, getStoredGeo() ?? undefined);
 
   return (
     <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { MessageCircle, Award, Users, BadgeCheck } from "lucide-react";
 import { SITE } from "@/lib/constants";
 import { buildWhatsAppLink } from "@/lib/utils";
+import { getStoredGeo } from "@/lib/analytics";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const CREDENTIALS = [
@@ -70,7 +71,9 @@ export function About() {
 
             <a
               href={buildWhatsAppLink(
-                "Olá Rhodrygo! Gostaria de saber mais sobre seus serviços."
+                "Olá Rhodrygo! Gostaria de saber mais sobre seus serviços.",
+                { source: "site", medium: "about_cta", campaign: "about" },
+                getStoredGeo() ?? undefined
               )}
               target="_blank"
               rel="noopener noreferrer"

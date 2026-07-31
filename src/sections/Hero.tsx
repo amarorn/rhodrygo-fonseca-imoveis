@@ -9,6 +9,7 @@ import { LeadForm } from "@/components/LeadForm";
 import { HERO_STATS } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion, animateCounter } from "@/lib/animations";
 import { buildWhatsAppLink, scrollToSection } from "@/lib/utils";
+import { getStoredGeo } from "@/lib/analytics";
 
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -218,7 +219,9 @@ export function Hero() {
             </button>
             <a
               href={buildWhatsAppLink(
-                "Olá Rhodrygo! Vim pelo site e gostaria de conversar sobre imóveis."
+                "Olá Rhodrygo! Vim pelo site e gostaria de conversar sobre imóveis.",
+                { source: "site", medium: "hero_cta", campaign: "hero" },
+                getStoredGeo() ?? undefined
               )}
               target="_blank"
               rel="noopener noreferrer"

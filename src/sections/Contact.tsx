@@ -10,6 +10,7 @@ import { ContactCard } from "@/components/ContactCard";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT, INSTAGRAM_URL } from "@/lib/constants";
 import { buildWhatsAppLink } from "@/lib/utils";
+import { getStoredGeo } from "@/lib/analytics";
 import {
   InstagramIcon,
   FacebookIcon,
@@ -45,7 +46,9 @@ export function Contact() {
                 title="WhatsApp"
                 content={CONTACT.whatsapp}
                 href={buildWhatsAppLink(
-                  "Olá Rhodrygo! Gostaria de entrar em contato."
+                  "Olá Rhodrygo! Gostaria de entrar em contato.",
+                  { source: "site", medium: "contact_card", campaign: "contact" },
+                  getStoredGeo() ?? undefined
                 )}
               />
               <ContactCard
