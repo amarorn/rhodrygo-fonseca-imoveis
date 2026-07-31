@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { SITE } from "@/lib/constants";
+import { assetPath } from "@/lib/site";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
 
 export function NavbarBrand() {
@@ -76,7 +77,7 @@ export function NavbarBrand() {
     >
       <div ref={logoRef} className="relative h-full opacity-0">
         <Image
-          src={SITE.logo.png}
+          src={assetPath(SITE.logo.png)}
           alt={SITE.logo.alt}
           width={658}
           height={568}

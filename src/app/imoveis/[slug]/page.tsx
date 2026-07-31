@@ -6,6 +6,7 @@ import { PropertyDetailView } from "@/components/PropertyDetailView";
 import { PropertyTracker } from "@/components/PropertyTracker";
 import { getAllPropertySlugs, getPropertyBySlug } from "@/lib/properties";
 import { formatPrice } from "@/lib/utils";
+import { absoluteUrl } from "@/lib/site";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: property.title,
       description: property.description,
-      images: [{ url: property.image, alt: property.title }],
+      images: [{ url: absoluteUrl(property.image), alt: property.title }],
     },
   };
 }

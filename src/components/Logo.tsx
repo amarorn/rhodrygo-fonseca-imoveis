@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { cn } from "@/lib/utils";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
 import { SITE } from "@/lib/constants";
+import { assetPath } from "@/lib/site";
 
 type LogoVariant = "footer" | "hero";
 
@@ -113,7 +114,7 @@ export function Logo({
     >
       <div ref={logoRef} className={cn("relative h-full opacity-0", config.className)}>
         <Image
-          src={SITE.logo.png}
+          src={assetPath(SITE.logo.png)}
           alt={SITE.logo.alt}
           width={658}
           height={568}

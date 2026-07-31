@@ -6,6 +6,7 @@ import { Bed, Bath, Maximize, Car, MessageCircle, MapPin } from "lucide-react";
 import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink, cn } from "@/lib/utils";
+import { assetPath } from "@/lib/site";
 import { buildPropertyUtm, trackLead } from "@/lib/analytics";
 
 interface PropertyCardProps {
@@ -41,7 +42,7 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
         data-cursor="image"
       >
         <Image
-          src={property.image}
+          src={assetPath(property.image)}
           alt={property.title}
           fill
           unoptimized

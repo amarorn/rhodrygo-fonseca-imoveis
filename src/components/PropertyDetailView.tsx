@@ -12,6 +12,7 @@ import {
 import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink } from "@/lib/utils";
+import { assetPath } from "@/lib/site";
 import { buildPropertyUtm } from "@/lib/analytics";
 
 interface PropertyDetailViewProps {
@@ -39,7 +40,7 @@ export function PropertyDetailView({ property }: PropertyDetailViewProps) {
       <div className="overflow-hidden rounded-3xl bg-white shadow-xl">
         <div className="relative aspect-[16/10] w-full">
           <Image
-            src={property.image}
+            src={assetPath(property.image)}
             alt={property.title}
             fill
             priority

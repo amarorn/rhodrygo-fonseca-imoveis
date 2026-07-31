@@ -4,7 +4,7 @@ import { Providers } from "@/components/Providers";
 import { MetaPixel } from "@/components/MetaPixel";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE } from "@/lib/constants";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, absoluteUrl } from "@/lib/site";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     locale: "pt_BR",
     images: [
       {
-        url: SITE.logo.pngOriginal,
+        url: absoluteUrl(SITE.logo.pngOriginal),
         alt: SITE.logo.alt,
       },
     ],
   },
   icons: {
-    icon: SITE.logo.pngOriginal,
-    apple: SITE.logo.pngOriginal,
+    icon: absoluteUrl(SITE.logo.pngOriginal),
+    apple: absoluteUrl(SITE.logo.pngOriginal),
   },
 };
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { InstagramIcon } from "@/components/SocialIcons";
 import { INSTAGRAM_URL, PROPERTIES } from "@/lib/constants";
+import { assetPath } from "@/lib/site";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
@@ -85,7 +86,7 @@ export function InstagramCTA() {
                 className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10"
               >
                 <Image
-                  src={property.image}
+                  src={assetPath(property.image)}
                   alt={property.title}
                   fill
                   unoptimized
