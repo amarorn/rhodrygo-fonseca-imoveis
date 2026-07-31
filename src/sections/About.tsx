@@ -4,7 +4,7 @@ import Image from "next/image";
 import { MessageCircle, Award, Users, BadgeCheck } from "lucide-react";
 import { SITE } from "@/lib/constants";
 import { buildWhatsAppLink } from "@/lib/utils";
-import { getStoredGeo } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const CREDENTIALS = [
@@ -15,6 +15,7 @@ const CREDENTIALS = [
 
 export function About() {
   const contentRef = useScrollAnimation<HTMLDivElement>({ stagger: 0.15 });
+  const geo = useGeo();
 
   return (
     <section id="sobre" className="bg-rf-cream py-20">
@@ -73,7 +74,7 @@ export function About() {
               href={buildWhatsAppLink(
                 "Olá Rhodrygo! Gostaria de saber mais sobre seus serviços.",
                 { source: "site", medium: "about_cta", campaign: "about" },
-                getStoredGeo() ?? undefined
+                geo ?? undefined
               )}
               target="_blank"
               rel="noopener noreferrer"

@@ -63,6 +63,7 @@ export async function captureGeoFromIp(): Promise<GeoParams | null> {
       country: data.country_name ?? undefined,
     };
     sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
+    notifyGeo(geo);
     return geo;
   } catch {
     return null;
@@ -78,6 +79,18 @@ export function getStoredGeo(): GeoParams | null {
   } catch {
     return null;
   }
+}
+
+type GeoListener = (geo: GeoParams | null) => void;
+const geoListeners = new Set<GeoListener>();
+
+export function subscribeGeo(listener: GeoListener): () => void {
+  geoListeners.add(listener);
+  return () => geoListeners.delete(listener);
+}
+
+function notifyGeo(geo: GeoParams | null) {
+  geoListeners.forEach((fn) => fn(geo));
 }
 
 export function appendUtmToUrl(url: string, utm?: UtmParams): string {

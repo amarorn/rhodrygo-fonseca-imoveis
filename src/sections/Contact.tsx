@@ -10,7 +10,7 @@ import { ContactCard } from "@/components/ContactCard";
 import { LeadForm } from "@/components/LeadForm";
 import { CONTACT, INSTAGRAM_URL } from "@/lib/constants";
 import { buildWhatsAppLink } from "@/lib/utils";
-import { getStoredGeo } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 import {
   InstagramIcon,
   FacebookIcon,
@@ -26,6 +26,8 @@ const SOCIAL = [
 ];
 
 export function Contact() {
+  const geo = useGeo();
+
   return (
     <section id="contato" className="bg-rf-cream py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -45,11 +47,11 @@ export function Contact() {
                 icon={MessageCircle}
                 title="WhatsApp"
                 content={CONTACT.whatsapp}
-                href={buildWhatsAppLink(
-                  "Olá Rhodrygo! Gostaria de entrar em contato.",
-                  { source: "site", medium: "contact_card", campaign: "contact" },
-                  getStoredGeo() ?? undefined
-                )}
+          href={buildWhatsAppLink(
+            "Olá Rhodrygo! Gostaria de entrar em contato.",
+            { source: "site", medium: "contact_card", campaign: "contact" },
+            geo ?? undefined
+          )}
               />
               <ContactCard
                 icon={Mail}

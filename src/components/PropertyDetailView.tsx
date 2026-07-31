@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,7 +14,7 @@ import {
 import { InstagramIcon } from "@/components/SocialIcons";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink } from "@/lib/utils";
-import { getStoredGeo } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 import { assetPath } from "@/lib/site";
 import { buildPropertyUtm } from "@/lib/analytics";
 
@@ -23,10 +25,11 @@ interface PropertyDetailViewProps {
 export function PropertyDetailView({ property }: PropertyDetailViewProps) {
   const priceLabel = formatPrice(property.price);
   const utm = buildPropertyUtm(property.slug);
+  const geo = useGeo();
   const whatsappMessage = property.price
     ? `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${priceLabel}). Vi a página do imóvel no site.`
     : `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location}. Vi a página do imóvel no site e gostaria de saber o valor.`;
-  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm, getStoredGeo() ?? undefined);
+  const whatsappHref = buildWhatsAppLink(whatsappMessage, utm, geo ?? undefined);
 
   return (
     <article className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">

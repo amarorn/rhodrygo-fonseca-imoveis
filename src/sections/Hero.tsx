@@ -9,7 +9,7 @@ import { LeadForm } from "@/components/LeadForm";
 import { HERO_STATS } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion, animateCounter } from "@/lib/animations";
 import { buildWhatsAppLink, scrollToSection } from "@/lib/utils";
-import { getStoredGeo } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -22,6 +22,7 @@ export function Hero() {
   const ctasRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const countersTriggered = useRef(false);
+  const geo = useGeo();
 
   useEffect(() => {
     registerGSAP();
@@ -221,7 +222,7 @@ export function Hero() {
               href={buildWhatsAppLink(
                 "Olá Rhodrygo! Vim pelo site e gostaria de conversar sobre imóveis.",
                 { source: "site", medium: "hero_cta", campaign: "hero" },
-                getStoredGeo() ?? undefined
+                geo ?? undefined
               )}
               target="_blank"
               rel="noopener noreferrer"

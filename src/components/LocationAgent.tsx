@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { X, MapPin, MessageCircle, ChevronRight } from "lucide-react";
 import { PROPERTIES } from "@/lib/constants";
-import { getStoredGeo, trackLead } from "@/lib/analytics";
+import { trackLead } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 import { citiesMatch, cn } from "@/lib/utils";
 import { assetPath } from "@/lib/site";
 import type { Property } from "@/types";
@@ -14,22 +15,19 @@ type AgentState = "idle" | "greeting" | "suggesting" | "dismissed";
 
 export function LocationAgent() {
   const [state, setState] = useState<AgentState>("idle");
-  const [userCity, setUserCity] = useState<string | undefined>(undefined);
-  const [localProperties, setLocalProperties] = useState<Property[]>([]);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const geo = useGeo();
+  const userCity = geo?.city;
+
+  const localProperties = userCity
+    ? PROPERTIES.filter((p) => citiesMatch(userCity, p.location)).slice(0, 3)
+    : [];
 
   useEffect(() => {
-    const geo = getStoredGeo();
-    if (!geo?.city) return;
-
-    setUserCity(geo.city);
-    const matches = PROPERTIES.filter((p) => citiesMatch(geo.city, p.location));
-    if (matches.length > 0) {
-      setLocalProperties(matches.slice(0, 3));
-      const timer = setTimeout(() => setState("greeting"), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    if (!userCity || localProperties.length === 0) return;
+    const timer = setTimeout(() => setState("greeting"), 2000);
+    return () => clearTimeout(timer);
+  }, [userCity, localProperties.length]);
 
   useEffect(() => {
     if (state !== "greeting" || hasInteracted) return;

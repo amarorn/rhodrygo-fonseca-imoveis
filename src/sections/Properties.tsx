@@ -7,19 +7,15 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { PROPERTIES, PROPERTY_CATEGORIES } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
 import { buildWhatsAppLink, cn, citiesMatch } from "@/lib/utils";
-import { getStoredGeo } from "@/lib/analytics";
+import { useGeo } from "@/hooks/useGeo";
 import type { PropertyCategory, Property } from "@/types";
 
 export function Properties() {
   const [activeCategory, setActiveCategory] = useState<PropertyCategory>("todos");
-  const [userCity, setUserCity] = useState<string | undefined>(undefined);
+  const geo = useGeo();
+  const userCity = geo?.city;
   const gridRef = useRef<HTMLDivElement>(null);
   const hasAnimatedIn = useRef(false);
-
-  useEffect(() => {
-    const geo = getStoredGeo();
-    if (geo?.city) setUserCity(geo.city);
-  }, []);
 
   const filtered =
     activeCategory === "todos"
