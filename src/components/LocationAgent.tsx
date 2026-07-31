@@ -3,9 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { X, MapPin, MessageCircle, ChevronRight } from "lucide-react";
+import {
+  X,
+  MapPin,
+  MessageCircle,
+  ChevronRight,
+  Crosshair,
+  LocateFixed,
+} from "lucide-react";
 import { PROPERTIES } from "@/lib/constants";
-import { trackLead } from "@/lib/analytics";
+import {
+  capturePreciseGeoFromBrowser,
+  saveManualGeo,
+  trackLead,
+} from "@/lib/analytics";
 import { useGeo } from "@/hooks/useGeo";
 import {
   buildWhatsAppLink,
@@ -14,17 +25,28 @@ import {
   propertyGeoScore,
   stripEmojis,
 } from "@/lib/utils";
+import { SERVICE_AREAS, formatGeoLabel } from "@/lib/locations";
 import { assetPath } from "@/lib/site";
 import type { Property } from "@/types";
 
-type AgentState = "hidden" | "typing" | "greeting" | "suggesting" | "dismissed";
+type AgentState =
+  | "hidden"
+  | "typing"
+  | "greeting"
+  | "refine"
+  | "suggesting"
+  | "dismissed";
 
 const DISMISS_KEY = "rf_agent_dismissed";
 
-function pickSuggestions(userCity?: string, userRegion?: string): Property[] {
+function pickSuggestions(
+  userCity?: string,
+  userRegion?: string,
+  userNeighborhood?: string
+): Property[] {
   const scored = PROPERTIES.map((p) => ({
     property: p,
-    score: propertyGeoScore(p.location, userCity, userRegion),
+    score: propertyGeoScore(p.location, userCity, userRegion, userNeighborhood),
   })).sort((a, b) => b.score - a.score);
 
   const local = scored.filter((s) => s.score >= 3).map((s) => s.property);
@@ -38,22 +60,30 @@ function pickSuggestions(userCity?: string, userRegion?: string): Property[] {
 
 export function LocationAgent() {
   const [state, setState] = useState<AgentState>("hidden");
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const geo = useGeo();
   const userCity = geo?.city;
   const userRegion = geo?.region;
+  const userNeighborhood = geo?.neighborhood;
+  const placeLabel = formatGeoLabel(geo ?? {});
 
   const suggestions = useMemo(
-    () => pickSuggestions(userCity, userRegion),
-    [userCity, userRegion]
+    () => pickSuggestions(userCity, userRegion, userNeighborhood),
+    [userCity, userRegion, userNeighborhood]
   );
 
   const hasLocalMatch = Boolean(
-    userCity &&
-      suggestions.some((p) => citiesMatch(userCity, p.location))
+    (userNeighborhood &&
+      suggestions.some(
+        (p) =>
+          propertyGeoScore(p.location, userCity, userRegion, userNeighborhood) >= 4
+      )) ||
+      (userCity && suggestions.some((p) => citiesMatch(userCity, p.location)))
   );
   const inRn = isRnRegion(userCity, userRegion);
+  const isPrecise = geo?.precision === "gps" || geo?.precision === "manual";
 
-  // Abre o agente assim que a localização chega (uma vez por sessão)
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem(DISMISS_KEY) === "1") {
@@ -61,6 +91,7 @@ export function LocationAgent() {
       return;
     }
     if (!userCity || suggestions.length === 0) return;
+    if (state !== "hidden") return;
 
     let cancelled = false;
     const typingTimer = setTimeout(() => {
@@ -69,17 +100,13 @@ export function LocationAgent() {
     const greetTimer = setTimeout(() => {
       if (!cancelled) setState("greeting");
     }, 2600);
-    const suggestTimer = setTimeout(() => {
-      if (!cancelled) setState("suggesting");
-    }, 5200);
 
     return () => {
       cancelled = true;
       clearTimeout(typingTimer);
       clearTimeout(greetTimer);
-      clearTimeout(suggestTimer);
     };
-  }, [userCity, suggestions.length]);
+  }, [userCity, suggestions.length, state]);
 
   if (!userCity || suggestions.length === 0 || state === "hidden" || state === "dismissed") {
     return null;
@@ -90,12 +117,50 @@ export function LocationAgent() {
     setState("dismissed");
   };
 
-  const handleOpenSuggestions = () => {
+  const handleOpenRefine = () => {
+    setState("refine");
+    trackLead("ViewContent", {
+      content_name: "location_agent_refine",
+      content_category: userCity,
+    });
+  };
+
+  const handleSkipToSuggestions = () => {
     setState("suggesting");
     trackLead("ViewContent", {
       content_name: "location_agent_open",
       content_category: userCity,
     });
+  };
+
+  const handleSelectArea = (city: string, neighborhood?: string) => {
+    saveManualGeo({ city, neighborhood, region: "Rio Grande do Norte" });
+    setState("suggesting");
+    trackLead("ViewContent", {
+      content_name: "location_manual",
+      content_category: neighborhood ? `${neighborhood}, ${city}` : city,
+    });
+  };
+
+  const handleUseGps = async () => {
+    setGpsLoading(true);
+    setGpsError(null);
+    try {
+      const result = await capturePreciseGeoFromBrowser();
+      if (!result) {
+        setGpsError("Não consegui identificar o bairro. Escolha na lista.");
+        return;
+      }
+      setState("suggesting");
+      trackLead("ViewContent", {
+        content_name: "location_gps",
+        content_category: formatGeoLabel(result),
+      });
+    } catch {
+      setGpsError("Permissão negada ou GPS indisponível. Escolha na lista.");
+    } finally {
+      setGpsLoading(false);
+    }
   };
 
   const handlePropertyClick = (property: Property) => {
@@ -105,27 +170,31 @@ export function LocationAgent() {
     });
   };
 
+  const locationPhrase = placeLabel || userCity;
+
   const whatsappHref = buildWhatsAppLink(
     hasLocalMatch
-      ? `Olá Rhodrygo! Estou em ${userCity} e vi que você tem imóveis na minha região. Quero saber mais.`
+      ? `Olá Rhodrygo! Estou em ${locationPhrase} e vi que você tem imóveis na minha região. Quero saber mais.`
       : inRn
-        ? `Olá Rhodrygo! Estou em ${userCity} (RN) e quero ver opções de imóveis na região.`
-        : `Olá Rhodrygo! Estou em ${userCity}${userRegion ? `, ${userRegion}` : ""} e gostaria de conhecer imóveis que você tem disponíveis.`,
+        ? `Olá Rhodrygo! Estou em ${locationPhrase} e quero ver opções de imóveis na região.`
+        : `Olá Rhodrygo! Estou em ${locationPhrase} e gostaria de conhecer imóveis que você tem disponíveis.`,
     { source: "site", medium: "location_agent", campaign: "geo_suggest" },
     geo ?? undefined
   );
 
-  const headline = hasLocalMatch
-    ? `Achei ${suggestions.length} imóve${suggestions.length === 1 ? "l" : "is"} perto de você`
-    : inRn
-      ? "Tenho opções no RN pra você"
-      : "Posso te ajudar a encontrar o imóvel ideal";
+  const headline = userNeighborhood
+    ? `Opções perto de ${userNeighborhood}`
+    : hasLocalMatch
+      ? `Achei ${suggestions.length} imóve${suggestions.length === 1 ? "l" : "is"} perto de você`
+      : inRn
+        ? "Tenho opções no RN pra você"
+        : "Posso te ajudar a encontrar o imóvel ideal";
 
-  const subtitle = hasLocalMatch
-    ? `Sugestões em ${userCity}`
-    : inRn
-      ? `Baseado na sua região (${userCity})`
-      : `Vi que você está em ${userCity}`;
+  const subtitle = userNeighborhood
+    ? `${userNeighborhood}${userCity ? ` · ${userCity}` : ""}`
+    : hasLocalMatch
+      ? `Sugestões em ${userCity}`
+      : `Detectado: ${userCity}`;
 
   return (
     <div
@@ -135,16 +204,7 @@ export function LocationAgent() {
     >
       {state === "typing" && (
         <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl ring-1 ring-black/5">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-rf-navy">
-            <Image
-              src={assetPath("/images/logo-rhodrygo-fonseca-transparent.png")}
-              alt="Rhodrygo"
-              width={40}
-              height={40}
-              className="object-contain p-1"
-              unoptimized
-            />
-          </div>
+          <AgentAvatar size={40} />
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 animate-bounce rounded-full bg-rf-gold [animation-delay:-0.3s]" />
             <span className="h-2 w-2 animate-bounce rounded-full bg-rf-gold [animation-delay:-0.15s]" />
@@ -155,32 +215,102 @@ export function LocationAgent() {
       )}
 
       {state === "greeting" && (
-        <button
-          type="button"
-          onClick={handleOpenSuggestions}
-          className="group flex w-full items-start gap-3 rounded-2xl bg-white p-4 text-left shadow-xl ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-2xl"
-        >
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-rf-navy">
-            <Image
-              src={assetPath("/images/logo-rhodrygo-fonseca-transparent.png")}
-              alt="Rhodrygo"
-              width={48}
-              height={48}
-              className="object-contain p-1"
-              unoptimized
-            />
+        <div className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5">
+          <button
+            type="button"
+            onClick={handleOpenRefine}
+            className="group flex w-full items-start gap-3 p-4 text-left transition-colors hover:bg-rf-cream/40"
+          >
+            <AgentAvatar size={48} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-rf-navy">
+                Olá! Parece que você está em {userCity}
+                {userRegion ? `, ${userRegion}` : ""}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                Posso afinar por cidade ou bairro e te mostrar imóveis certos pra você.
+              </p>
+            </div>
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-rf-gold transition-transform group-hover:translate-x-0.5" />
+          </button>
+          <div className="flex gap-2 border-t border-gray-100 px-3 py-2.5">
+            <button
+              type="button"
+              onClick={handleOpenRefine}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rf-navy px-3 py-2 text-xs font-semibold text-white"
+            >
+              <LocateFixed className="h-3.5 w-3.5" />
+              Afinar localização
+            </button>
+            <button
+              type="button"
+              onClick={handleSkipToSuggestions}
+              className="rounded-xl px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-rf-navy"
+            >
+              Ver opções
+            </button>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-rf-navy">
-              Olá! Vi que você está em {userCity}
-              {userRegion ? `, ${userRegion}` : ""}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-gray-500">
-              {headline}. Toque para ver as sugestões.
-            </p>
+        </div>
+      )}
+
+      {state === "refine" && (
+        <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
+          <div className="flex items-start justify-between gap-2 bg-rf-navy px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-white">Onde você está buscando?</p>
+              <p className="mt-0.5 text-xs text-white/70">
+                Cidade ou bairro — assim acerto melhor as sugestões
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
+              aria-label="Fechar"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-rf-gold transition-transform group-hover:translate-x-0.5" />
-        </button>
+
+          <div className="space-y-3 p-3">
+            <button
+              type="button"
+              onClick={handleUseGps}
+              disabled={gpsLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-rf-gold/40 bg-rf-gold/10 px-4 py-2.5 text-sm font-semibold text-rf-navy transition-colors hover:bg-rf-gold/20 disabled:opacity-60"
+            >
+              <Crosshair className={`h-4 w-4 text-rf-gold ${gpsLoading ? "animate-pulse" : ""}`} />
+              {gpsLoading ? "Localizando…" : "Usar minha localização precisa"}
+            </button>
+            {gpsError && <p className="text-center text-xs text-red-600">{gpsError}</p>}
+
+            <p className="text-center text-[11px] font-medium uppercase tracking-wide text-gray-400">
+              ou escolha na lista
+            </p>
+
+            <div className="max-h-56 space-y-1 overflow-y-auto">
+              {SERVICE_AREAS.map((area) => (
+                <button
+                  key={area.label}
+                  type="button"
+                  onClick={() => handleSelectArea(area.city, area.neighborhood)}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-rf-navy transition-colors hover:bg-rf-cream"
+                >
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-rf-gold" />
+                  {area.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSkipToSuggestions}
+              className="w-full py-1.5 text-center text-xs text-gray-500 hover:text-rf-navy"
+            >
+              Continuar com {userCity} (aproximado)
+            </button>
+          </div>
+        </div>
       )}
 
       {state === "suggesting" && (
@@ -189,28 +319,34 @@ export function LocationAgent() {
             <div className="min-w-0">
               <div className="mb-1 flex items-center gap-2 text-white">
                 <MapPin className="h-4 w-4 shrink-0 text-rf-gold" />
-                <span className="truncate text-sm font-semibold capitalize">
-                  {userCity}
-                  {userRegion ? ` · ${userRegion}` : ""}
-                </span>
+                <span className="truncate text-sm font-semibold">{subtitle}</span>
               </div>
-              <p className="text-xs text-white/70">{subtitle}</p>
+              <p className="text-xs text-white/70">
+                {isPrecise ? "Localização precisa" : "Localização aproximada por IP"}
+              </p>
             </div>
             <button
               type="button"
               onClick={handleClose}
-              className="rounded-full p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-full p-1 text-white/60 hover:bg-white/10 hover:text-white"
               aria-label="Fechar assistente"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="space-y-1 border-b border-gray-100 bg-rf-cream/50 px-4 py-3">
-            <p className="text-sm font-medium text-rf-navy">{headline}</p>
-            <p className="text-xs text-gray-500">
-              Selecionei com base na sua localização de acesso.
-            </p>
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-rf-cream/50 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-rf-navy">{headline}</p>
+              <p className="text-xs text-gray-500">Sugestões com base na sua localização</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setState("refine")}
+              className="shrink-0 text-xs font-semibold text-rf-gold hover:underline"
+            >
+              Ajustar
+            </button>
           </div>
 
           <div className="max-h-72 space-y-1 overflow-y-auto p-2">
@@ -264,6 +400,24 @@ export function LocationAgent() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AgentAvatar({ size }: { size: number }) {
+  return (
+    <div
+      className="relative shrink-0 overflow-hidden rounded-full bg-rf-navy"
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src={assetPath("/images/logo-rhodrygo-fonseca-transparent.png")}
+        alt="Rhodrygo"
+        width={size}
+        height={size}
+        className="object-contain p-1"
+        unoptimized
+      />
     </div>
   );
 }

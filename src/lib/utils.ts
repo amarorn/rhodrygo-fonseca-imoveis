@@ -88,16 +88,26 @@ export function isRnRegion(city?: string, region?: string): boolean {
 
 /**
  * Pontua relevância do imóvel para o visitante.
- * 3 = cidade exata / grande natal, 2 = mesmo estado RN, 1 = demais.
+ * 4 = bairro, 3 = cidade / grande natal, 2 = mesmo estado RN, 1 = demais.
  */
 export function propertyGeoScore(
   propertyLocation: string,
   userCity?: string,
-  userRegion?: string
+  userRegion?: string,
+  userNeighborhood?: string
 ): number {
+  const propNorm = normalizeCity(propertyLocation);
+
+  if (userNeighborhood) {
+    const neighNorm = normalizeCity(userNeighborhood);
+    if (propNorm.includes(neighNorm) || neighNorm.includes(propNorm.split(",")[0] ?? "")) {
+      return 4;
+    }
+  }
+
   if (userCity && citiesMatch(userCity, propertyLocation)) return 3;
   if (isRnRegion(userCity, userRegion) && isRnRegion(propertyLocation)) return 2;
-  if (userRegion && normalizeCity(propertyLocation).includes(normalizeCity(userRegion))) {
+  if (userRegion && propNorm.includes(normalizeCity(userRegion))) {
     return 2;
   }
   return 1;
@@ -109,8 +119,11 @@ export function buildWhatsAppLink(
   geo?: GeoParams
 ): string {
   let finalMessage = message;
-  if (geo?.city) {
-    finalMessage += `\n\nEstou em ${geo.city}${geo.region ? `, ${geo.region}` : ""}.`;
+  if (geo?.city || geo?.neighborhood) {
+    const place = geo.neighborhood
+      ? `${geo.neighborhood}, ${geo.city ?? ""}`.replace(/,\s*$/, "")
+      : geo.city;
+    finalMessage += `\n\nEstou em ${place}${geo.region && !geo.neighborhood ? `, ${geo.region}` : ""}.`;
   }
   if (utm?.source || utm?.campaign) {
     const parts = [utm.source, utm.medium, utm.campaign].filter(Boolean);

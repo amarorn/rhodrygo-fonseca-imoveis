@@ -5,11 +5,24 @@ export type UtmParams = {
   content?: string;
 };
 
+export type GeoPrecision = "ip" | "gps" | "manual";
+
 export type GeoParams = {
   city?: string;
+  neighborhood?: string;
   region?: string;
   country?: string;
+  lat?: number;
+  lng?: number;
+  /** Como a localização foi obtida */
+  precision?: GeoPrecision;
 };
+
+function persistGeo(geo: GeoParams): GeoParams {
+  sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
+  notifyGeo(geo);
+  return geo;
+}
 
 const UTM_STORAGE_KEY = "rf_utm";
 const GEO_STORAGE_KEY = "rf_geo";
@@ -58,6 +71,7 @@ const geoProviders: GeoProvider[] = [
       city: data.city ?? undefined,
       region: data.region ?? undefined,
       country: data.country_name ?? undefined,
+      precision: "ip" as const,
     };
   },
   async () => {
@@ -69,6 +83,7 @@ const geoProviders: GeoProvider[] = [
       city: data.city ?? undefined,
       region: data.region ?? undefined,
       country: data.country ?? undefined,
+      precision: "ip" as const,
     };
   },
   async () => {
@@ -79,6 +94,7 @@ const geoProviders: GeoProvider[] = [
       city: data.city ?? undefined,
       region: data.region ?? undefined,
       country: data.country ?? undefined,
+      precision: "ip" as const,
     };
   },
 ];
@@ -97,15 +113,102 @@ export async function captureGeoFromIp(): Promise<GeoParams | null> {
     try {
       const geo = await provider();
       if (!geo || (!geo.city && !geo.region)) continue;
-      sessionStorage.setItem(GEO_STORAGE_KEY, JSON.stringify(geo));
-      notifyGeo(geo);
-      return geo;
+      return persistGeo(geo);
     } catch {
       // tenta próximo provedor
     }
   }
 
   return null;
+}
+
+/** Salva localização escolhida manualmente (cidade/bairro). */
+export function saveManualGeo(input: {
+  city: string;
+  neighborhood?: string;
+  region?: string;
+}): GeoParams {
+  const current = getStoredGeo();
+  return persistGeo({
+    ...current,
+    city: input.city,
+    neighborhood: input.neighborhood,
+    region: input.region ?? current?.region ?? "Rio Grande do Norte",
+    country: current?.country ?? "Brazil",
+    precision: "manual",
+  });
+}
+
+async function reverseGeocode(lat: number, lng: number): Promise<GeoParams | null> {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  url.searchParams.set("format", "json");
+  url.searchParams.set("addressdetails", "1");
+  url.searchParams.set("accept-language", "pt-BR");
+
+  const res = await fetch(url.toString(), {
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`nominatim ${res.status}`);
+  const data = await res.json();
+  const addr = data.address ?? {};
+
+  const neighborhood =
+    addr.suburb ??
+    addr.neighbourhood ??
+    addr.quarter ??
+    addr.city_district ??
+    addr.village ??
+    undefined;
+
+  const city =
+    addr.city ??
+    addr.town ??
+    addr.municipality ??
+    addr.county ??
+    undefined;
+
+  return {
+    city,
+    neighborhood,
+    region: addr.state ?? undefined,
+    country: addr.country ?? undefined,
+    lat,
+    lng,
+    precision: "gps",
+  };
+}
+
+/**
+ * Pede permissão de GPS e resolve cidade/bairro via reverse geocode.
+ * Mais preciso que IP (nível bairro quando disponível).
+ */
+export async function capturePreciseGeoFromBrowser(): Promise<GeoParams | null> {
+  if (typeof window === "undefined" || !navigator.geolocation) return null;
+
+  const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 60_000,
+    });
+  });
+
+  const { latitude: lat, longitude: lng } = position.coords;
+  const geo = await reverseGeocode(lat, lng);
+  if (!geo || (!geo.city && !geo.neighborhood)) return null;
+
+  const current = getStoredGeo();
+  return persistGeo({
+    ...current,
+    ...geo,
+    // Mantém cidade do IP se reverse não trouxer
+    city: geo.city ?? current?.city,
+    region: geo.region ?? current?.region,
+    country: geo.country ?? current?.country,
+    precision: "gps",
+  });
 }
 
 export function getStoredGeo(): GeoParams | null {
@@ -148,7 +251,16 @@ export function trackLead(eventName: string, params?: Record<string, string>) {
   if (typeof window === "undefined") return;
 
   const geo = getStoredGeo();
-  const enriched = geo ? { ...params, ...geo } : params;
+  const geoFlat = geo
+    ? {
+        city: geo.city,
+        neighborhood: geo.neighborhood,
+        region: geo.region,
+        country: geo.country,
+        precision: geo.precision,
+      }
+    : undefined;
+  const enriched = geoFlat ? { ...params, ...geoFlat } : params;
 
   const fbq = (window as Window & { fbq?: (...args: unknown[]) => void }).fbq;
   if (fbq) {

@@ -24,15 +24,19 @@ export function Properties() {
 
   // Reordena: imóveis mais próximos da região do usuário primeiro
   const sorted = [...filtered].sort((a, b) => {
-    if (!userCity && !geo?.region) return 0;
+    if (!userCity && !geo?.region && !geo?.neighborhood) return 0;
     return (
-      propertyGeoScore(b.location, userCity, geo?.region) -
-      propertyGeoScore(a.location, userCity, geo?.region)
+      propertyGeoScore(b.location, userCity, geo?.region, geo?.neighborhood) -
+      propertyGeoScore(a.location, userCity, geo?.region, geo?.neighborhood)
     );
   });
 
   const localCount = userCity
-    ? sorted.filter((p) => citiesMatch(userCity, p.location) || propertyGeoScore(p.location, userCity, geo?.region) >= 2).length
+    ? sorted.filter(
+        (p) =>
+          citiesMatch(userCity, p.location) ||
+          propertyGeoScore(p.location, userCity, geo?.region, geo?.neighborhood) >= 2
+      ).length
     : 0;
 
   useEffect(() => {
