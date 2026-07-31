@@ -92,7 +92,7 @@ export function Properties() {
 
         <div
           ref={gridRef}
-          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-3"
         >
           {filtered.map((property) => (
             <PropertyCard key={property.id} property={property} />
