@@ -21,6 +21,7 @@ import { useGeo } from "@/hooks/useGeo";
 import {
   buildWhatsAppLink,
   citiesMatch,
+  cn,
   isRnRegion,
   propertyGeoScore,
   stripEmojis,
@@ -151,7 +152,9 @@ export function LocationAgent() {
     try {
       const result = await capturePreciseGeoFromBrowser();
       if (!result) {
-        setGpsError("Não consegui identificar o bairro. Escolha na lista.");
+        setGpsError(
+          "Não consegui ler o GPS. Sem problema — escolha o bairro na lista abaixo."
+        );
         return;
       }
       setState("suggesting");
@@ -160,7 +163,9 @@ export function LocationAgent() {
         content_category: formatGeoLabel(result),
       });
     } catch {
-      setGpsError("Permissão negada ou GPS indisponível. Escolha na lista.");
+      setGpsError(
+        "GPS bloqueado neste navegador. Escolha o bairro na lista — funciona igual."
+      );
     } finally {
       setGpsLoading(false);
     }
@@ -276,22 +281,16 @@ export function LocationAgent() {
           </div>
 
           <div className="space-y-3 p-3">
-            <button
-              type="button"
-              onClick={handleUseGps}
-              disabled={gpsLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-rf-gold/40 bg-rf-gold/10 px-4 py-2.5 text-sm font-semibold text-rf-navy transition-colors hover:bg-rf-gold/20 disabled:opacity-60"
-            >
-              <Crosshair className={`h-4 w-4 text-rf-gold ${gpsLoading ? "animate-pulse" : ""}`} />
-              {gpsLoading ? "Localizando…" : "Usar minha localização precisa"}
-            </button>
-            {gpsError && <p className="text-center text-xs text-red-600">{gpsError}</p>}
-
-            <p className="text-center text-[11px] font-medium uppercase tracking-wide text-gray-400">
-              ou escolha na lista
+            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">
+              Escolha cidade ou bairro
             </p>
 
-            <div className="max-h-56 space-y-1 overflow-y-auto">
+            <div
+              className={cn(
+                "max-h-56 space-y-1 overflow-y-auto rounded-xl",
+                gpsError && "ring-2 ring-rf-gold/50 ring-offset-2"
+              )}
+            >
               {SERVICE_AREAS.map((area) => (
                 <button
                   key={area.label}
@@ -304,6 +303,22 @@ export function LocationAgent() {
                 </button>
               ))}
             </div>
+
+            {gpsError && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+                {gpsError}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={handleUseGps}
+              disabled={gpsLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-rf-navy transition-colors hover:border-rf-gold/40 hover:bg-rf-gold/10 disabled:opacity-60"
+            >
+              <Crosshair className={`h-4 w-4 text-rf-gold ${gpsLoading ? "animate-pulse" : ""}`} />
+              {gpsLoading ? "Localizando…" : "Ou usar GPS do celular"}
+            </button>
 
             <button
               type="button"
