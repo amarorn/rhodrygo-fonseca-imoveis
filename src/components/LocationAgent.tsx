@@ -41,23 +41,33 @@ type AgentState =
 
 const DISMISS_KEY = "rf_agent_dismissed";
 
+/**
+ * Só devolve imóveis com match real na região do visitante.
+ * Fora do RN / sem match → lista vazia (não empurra Natal).
+ */
 function pickSuggestions(
   userCity?: string,
   userRegion?: string,
   userNeighborhood?: string
 ): Property[] {
+  if (!userCity && !userRegion && !userNeighborhood) return [];
+
   const scored = PROPERTIES.map((p) => ({
     property: p,
     score: propertyGeoScore(p.location, userCity, userRegion, userNeighborhood),
   })).sort((a, b) => b.score - a.score);
 
+  // Bairro ou cidade (score 3–4)
   const local = scored.filter((s) => s.score >= 3).map((s) => s.property);
   if (local.length > 0) return local.slice(0, 3);
 
-  const regional = scored.filter((s) => s.score >= 2).map((s) => s.property);
-  if (regional.length > 0) return regional.slice(0, 3);
+  // Só amplia para todo o RN se o visitante estiver no RN
+  if (isRnRegion(userCity, userRegion)) {
+    const regional = scored.filter((s) => s.score >= 2).map((s) => s.property);
+    if (regional.length > 0) return regional.slice(0, 3);
+  }
 
-  return scored.slice(0, 3).map((s) => s.property);
+  return [];
 }
 
 export function LocationAgent() {
@@ -87,13 +97,18 @@ export function LocationAgent() {
   const inRn = isRnRegion(userCity, userRegion);
   const isPrecise = geo?.precision === "gps" || geo?.precision === "manual";
 
+  const hasSuggestions = suggestions.length > 0;
+  const outOfArea = Boolean(userCity && !hasSuggestions && !inRn);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem(DISMISS_KEY) === "1") {
       setState("dismissed");
       return;
     }
-    if (!userCity || suggestions.length === 0 || startedRef.current) return;
+    // Abre com match local OU visitante fora da área (mensagem diferente)
+    if (!userCity || startedRef.current) return;
+    if (!hasSuggestions && !outOfArea) return;
 
     startedRef.current = true;
     let cancelled = false;
@@ -108,12 +123,14 @@ export function LocationAgent() {
       cancelled = true;
       clearTimeout(typingTimer);
       clearTimeout(greetTimer);
-      // Permite remount do Strict Mode reiniciar o fluxo
       startedRef.current = false;
     };
-  }, [userCity, suggestions.length]);
+  }, [userCity, hasSuggestions, outOfArea]);
 
-  if (!userCity || suggestions.length === 0 || state === "hidden" || state === "dismissed") {
+  if (!userCity || state === "hidden" || state === "dismissed") {
+    return null;
+  }
+  if (!hasSuggestions && !outOfArea && state !== "refine") {
     return null;
   }
 
@@ -133,8 +150,8 @@ export function LocationAgent() {
   const handleSkipToSuggestions = () => {
     setState("suggesting");
     trackLead("ViewContent", {
-      content_name: "location_agent_open",
-      content_category: userCity,
+      content_name: outOfArea ? "location_agent_out_of_area" : "location_agent_open",
+      content_category: userCity ?? "",
     });
   };
 
@@ -189,26 +206,32 @@ export function LocationAgent() {
   const whatsappHref = buildWhatsAppLink(
     hasLocalMatch
       ? `Olá Rhodrygo! Estou em ${locationPhrase} e vi que você tem imóveis na minha região. Quero saber mais.`
-      : inRn
-        ? `Olá Rhodrygo! Estou em ${locationPhrase} e quero ver opções de imóveis na região.`
-        : `Olá Rhodrygo! Estou em ${locationPhrase} e gostaria de conhecer imóveis que você tem disponíveis.`,
+      : outOfArea
+        ? `Olá Rhodrygo! Estou em ${locationPhrase} e vi seu site. Vocês atendem só no RN? Quero saber mais sobre imóveis em Natal/Pipa.`
+        : inRn
+          ? `Olá Rhodrygo! Estou em ${locationPhrase} e quero ver opções de imóveis na região.`
+          : `Olá Rhodrygo! Estou em ${locationPhrase} e gostaria de conversar sobre imóveis.`,
     { source: "site", medium: "location_agent", campaign: "geo_suggest" },
     geo ?? undefined
   );
 
-  const headline = userNeighborhood
-    ? `Opções perto de ${userNeighborhood}`
-    : hasLocalMatch
-      ? `Achei ${suggestions.length} imóve${suggestions.length === 1 ? "l" : "is"} perto de você`
-      : inRn
-        ? "Tenho opções no RN pra você"
-        : "Posso te ajudar a encontrar o imóvel ideal";
+  const headline = outOfArea
+    ? `Ainda não tenho imóveis em ${userCity}`
+    : userNeighborhood
+      ? `Opções perto de ${userNeighborhood}`
+      : hasLocalMatch
+        ? `Achei ${suggestions.length} imóve${suggestions.length === 1 ? "l" : "is"} perto de você`
+        : inRn
+          ? "Tenho opções no RN pra você"
+          : "Sem imóveis nesta localização";
 
-  const subtitle = userNeighborhood
-    ? `${userNeighborhood}${userCity ? ` · ${userCity}` : ""}`
-    : hasLocalMatch
-      ? `Sugestões em ${userCity}`
-      : `Detectado: ${userCity}`;
+  const subtitle = outOfArea
+    ? `${userCity}${userRegion ? ` · ${userRegion}` : ""}`
+    : userNeighborhood
+      ? `${userNeighborhood}${userCity ? ` · ${userCity}` : ""}`
+      : hasLocalMatch
+        ? `Sugestões em ${userCity}`
+        : `Detectado: ${userCity}`;
 
   return (
     <div
@@ -242,27 +265,51 @@ export function LocationAgent() {
                 {userRegion ? `, ${userRegion}` : ""}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-gray-500">
-                Posso afinar por cidade ou bairro e te mostrar imóveis certos pra você.
+                {outOfArea
+                  ? "Atendo Natal, Pipa e litoral do RN. Quer ver opções por lá ou falar comigo?"
+                  : "Posso afinar por cidade ou bairro e te mostrar imóveis certos pra você."}
               </p>
             </div>
             <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-rf-gold transition-transform group-hover:translate-x-0.5" />
           </button>
           <div className="flex gap-2 border-t border-gray-100 px-3 py-2.5">
-            <button
-              type="button"
-              onClick={handleOpenRefine}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rf-navy px-3 py-2 text-xs font-semibold text-white"
-            >
-              <LocateFixed className="h-3.5 w-3.5" />
-              Afinar localização
-            </button>
-            <button
-              type="button"
-              onClick={handleSkipToSuggestions}
-              className="rounded-xl px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-rf-navy"
-            >
-              Ver opções
-            </button>
+            {outOfArea ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleOpenRefine}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rf-navy px-3 py-2 text-xs font-semibold text-white"
+                >
+                  <LocateFixed className="h-3.5 w-3.5" />
+                  Buscar no RN
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkipToSuggestions}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-rf-navy"
+                >
+                  Entendi
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleOpenRefine}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rf-navy px-3 py-2 text-xs font-semibold text-white"
+                >
+                  <LocateFixed className="h-3.5 w-3.5" />
+                  Afinar localização
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkipToSuggestions}
+                  className="rounded-xl px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-rf-navy"
+                >
+                  Ver opções
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -362,51 +409,72 @@ export function LocationAgent() {
           <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-rf-cream/50 px-4 py-3">
             <div>
               <p className="text-sm font-medium text-rf-navy">{headline}</p>
-              <p className="text-xs text-gray-500">Sugestões com base na sua localização</p>
+              <p className="text-xs text-gray-500">
+                {outOfArea
+                  ? "Atuo em Natal, Pipa e litoral do RN"
+                  : "Sugestões com base na sua localização"}
+              </p>
             </div>
             <button
               type="button"
               onClick={() => setState("refine")}
               className="shrink-0 text-xs font-semibold text-rf-gold hover:underline"
             >
-              Ajustar
+              {outOfArea ? "Buscar no RN" : "Ajustar"}
             </button>
           </div>
 
-          <div className="max-h-72 space-y-1 overflow-y-auto p-2">
-            {suggestions.map((property) => (
-              <Link
-                key={property.id}
-                href={`/imoveis/${property.slug}`}
-                onClick={() => handlePropertyClick(property)}
-                className="group flex gap-3 rounded-xl p-2 transition-colors hover:bg-rf-cream"
+          {hasSuggestions ? (
+            <div className="max-h-72 space-y-1 overflow-y-auto p-2">
+              {suggestions.map((property) => (
+                <Link
+                  key={property.id}
+                  href={`/imoveis/${property.slug}`}
+                  onClick={() => handlePropertyClick(property)}
+                  className="group flex gap-3 rounded-xl p-2 transition-colors hover:bg-rf-cream"
+                >
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                    <Image
+                      src={assetPath(property.image)}
+                      alt={stripEmojis(property.title)}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      unoptimized
+                      sizes="64px"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-semibold leading-snug text-rf-navy group-hover:text-rf-gold">
+                      {stripEmojis(property.title)}
+                    </p>
+                    <p className="mt-0.5 text-xs capitalize text-gray-500">
+                      {property.location}
+                    </p>
+                    <p className="mt-0.5 text-xs font-bold text-rf-navy">
+                      {property.price
+                        ? `R$ ${property.price.toLocaleString("pt-BR")}`
+                        : "Consulte"}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3 px-4 py-5 text-center">
+              <p className="text-sm leading-relaxed text-gray-600">
+                Não tenho anúncios em{" "}
+                <span className="font-semibold text-rf-navy">{userCity}</span> no
+                momento. Meu foco é Natal, Pipa e o litoral do RN.
+              </p>
+              <button
+                type="button"
+                onClick={() => setState("refine")}
+                className="text-sm font-semibold text-rf-gold hover:underline"
               >
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-                  <Image
-                    src={assetPath(property.image)}
-                    alt={stripEmojis(property.title)}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
-                    sizes="64px"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-semibold leading-snug text-rf-navy group-hover:text-rf-gold">
-                    {stripEmojis(property.title)}
-                  </p>
-                  <p className="mt-0.5 text-xs capitalize text-gray-500">
-                    {property.location}
-                  </p>
-                  <p className="mt-0.5 text-xs font-bold text-rf-navy">
-                    {property.price
-                      ? `R$ ${property.price.toLocaleString("pt-BR")}`
-                      : "Consulte"}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
+                Quero ver imóveis no RN
+              </button>
+            </div>
+          )}
 
           <div className="border-t border-gray-100 p-3">
             <a
@@ -419,7 +487,7 @@ export function LocationAgent() {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-rf-whatsapp px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
             >
               <MessageCircle className="h-4 w-4" fill="currentColor" strokeWidth={0} />
-              Quero essas opções no WhatsApp
+              {outOfArea ? "Falar com Rhodrygo" : "Quero essas opções no WhatsApp"}
             </a>
           </div>
         </div>

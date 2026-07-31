@@ -6,7 +6,7 @@ import { MapPin } from "lucide-react";
 import { PropertyCard } from "@/components/PropertyCard";
 import { PROPERTIES, PROPERTY_CATEGORIES } from "@/lib/constants";
 import { registerGSAP, prefersReducedMotion } from "@/lib/animations";
-import { buildWhatsAppLink, cn, citiesMatch, propertyGeoScore } from "@/lib/utils";
+import { buildWhatsAppLink, cn, propertyGeoScore } from "@/lib/utils";
 import { useGeo } from "@/hooks/useGeo";
 import type { PropertyCategory, Property } from "@/types";
 
@@ -22,20 +22,21 @@ export function Properties() {
       ? PROPERTIES
       : PROPERTIES.filter((p) => p.category === activeCategory);
 
-  // Reordena: imóveis mais próximos da região do usuário primeiro
+  // Só reordena quando há match real (score >= 2 = visitante no RN)
   const sorted = [...filtered].sort((a, b) => {
     if (!userCity && !geo?.region && !geo?.neighborhood) return 0;
-    return (
-      propertyGeoScore(b.location, userCity, geo?.region, geo?.neighborhood) -
-      propertyGeoScore(a.location, userCity, geo?.region, geo?.neighborhood)
-    );
+    const scoreA = propertyGeoScore(a.location, userCity, geo?.region, geo?.neighborhood);
+    const scoreB = propertyGeoScore(b.location, userCity, geo?.region, geo?.neighborhood);
+    // Fora da área: mantém ordem original (não “força” Natal no topo)
+    if (scoreA < 2 && scoreB < 2) return 0;
+    return scoreB - scoreA;
   });
 
+  // Badge só com match real de cidade/bairro — nunca “11 imóveis em São Paulo”
   const localCount = userCity
     ? sorted.filter(
         (p) =>
-          citiesMatch(userCity, p.location) ||
-          propertyGeoScore(p.location, userCity, geo?.region, geo?.neighborhood) >= 2
+          propertyGeoScore(p.location, userCity, geo?.region, geo?.neighborhood) >= 3
       ).length
     : 0;
 
