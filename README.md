@@ -91,6 +91,8 @@ apify login --token SEU_TOKEN
 npm run sync:instagram
 ```
 
+O sync baixa **todas as fotos do carrossel** de cada post e grava em `images[]` (a capa continua em `image`). Na página do imóvel há galeria com setas e miniaturas.
+
 O workflow `.github/workflows/sync-instagram.yml` roda toda segunda-feira (ou manualmente) se você adicionar o secret `APIFY_TOKEN` no GitHub.
 
 ### Rastreamento (Meta Pixel + UTM)

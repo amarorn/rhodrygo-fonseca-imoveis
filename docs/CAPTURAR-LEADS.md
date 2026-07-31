@@ -48,8 +48,11 @@ Data	Origem	Nome	E-mail	WhatsApp	Tipo	Quartos	Faixa	Região	Urgência	Interesse	
 
 ### Apps Script
 
+> Se a planilha “mistura” colunas (faixa em Quartos, URL em Mensagem), o script antigo ainda está ativo.  
+> Código canônico: [`docs/apps-script-leads.js`](./apps-script-leads.js) — cole **tudo**, salve e publique **nova versão**.
+
 1. Na planilha: **Extensões → Apps Script**
-2. Apague o código padrão e cole:
+2. Apague o código antigo e cole o de `docs/apps-script-leads.js` (ou o bloco abaixo):
 
 ```javascript
 function doGet() {

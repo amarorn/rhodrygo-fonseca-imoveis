@@ -8,6 +8,7 @@ import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink, cn, stripEmojis, truncateText } from "@/lib/utils";
 import { assetPath } from "@/lib/site";
 import { buildPropertyUtm, rememberPropertyView, trackLead } from "@/lib/analytics";
+import { getPropertyImages } from "@/lib/properties";
 import { useGeo } from "@/hooks/useGeo";
 
 interface PropertyCardProps {
@@ -17,6 +18,7 @@ interface PropertyCardProps {
 
 export function PropertyCard({ property, className }: PropertyCardProps) {
   const priceLabel = formatPrice(property.price);
+  const photoCount = getPropertyImages(property).length;
   const utm = buildPropertyUtm(property.slug);
   const geo = useGeo();
   const whatsappMessage = property.price
@@ -94,6 +96,11 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
         <span className="absolute left-3 top-3 rounded-full bg-rf-gold px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-rf-navy shadow-sm">
           {property.badge}
         </span>
+        {photoCount > 1 && (
+          <span className="absolute right-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+            {photoCount} fotos
+          </span>
+        )}
         <span className="absolute bottom-3 right-3 rounded-xl bg-white/95 px-3 py-1.5 text-sm font-bold text-rf-navy shadow-lg backdrop-blur-sm">
           {priceLabel}
         </span>

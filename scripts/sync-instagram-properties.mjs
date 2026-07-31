@@ -162,8 +162,46 @@ async function fetchInstagramPosts() {
   return posts;
 }
 
-function getImageUrl(post) {
-  return post.displayUrl || post.imageUrl || post.thumbnailUrl || post.images?.[0];
+/** Todas as URLs de imagem do post (carrossel / sidecar / single). */
+function getImageUrls(post) {
+  const urls = [];
+
+  if (Array.isArray(post.carouselImages)) {
+    for (const u of post.carouselImages) {
+      if (typeof u === "string" && u) urls.push(u);
+    }
+  }
+
+  if (Array.isArray(post.childPosts)) {
+    for (const child of post.childPosts) {
+      const u =
+        child?.displayUrl ||
+        child?.imageUrl ||
+        child?.thumbnailUrl ||
+        (Array.isArray(child?.images) ? child.images[0] : undefined);
+      if (typeof u === "string" && u) urls.push(u);
+    }
+  }
+
+  if (Array.isArray(post.images)) {
+    for (const u of post.images) {
+      if (typeof u === "string" && u) urls.push(u);
+    }
+  }
+
+  const primary =
+    post.displayUrl || post.imageUrl || post.thumbnailUrl || undefined;
+  if (typeof primary === "string" && primary) urls.unshift(primary);
+
+  return [...new Set(urls)];
+}
+
+function imageExtension(url) {
+  try {
+    return extname(new URL(url).pathname.split("?")[0]) || ".jpg";
+  } catch {
+    return ".jpg";
+  }
 }
 
 async function main() {
@@ -177,8 +215,8 @@ async function main() {
     const caption = post.caption || "";
     if (!isListing(caption) || isExcluded(caption)) continue;
 
-    const imageUrl = getImageUrl(post);
-    if (!imageUrl) {
+    const imageUrls = getImageUrls(post);
+    if (imageUrls.length === 0) {
       console.warn(`Aviso: post ${post.shortCode || post.id} sem imagem, ignorado.`);
       continue;
     }
@@ -194,15 +232,28 @@ async function main() {
     if (usedSlugs.has(slug)) slug = `${slug}-${post.shortCode || post.id}`.slice(0, 60);
     usedSlugs.add(slug);
 
-    const ext = extname(new URL(imageUrl).pathname.split("?")[0]) || ".jpg";
-    const filename = `${slug}${ext}`;
-    const imagePath = `/properties/${filename}`;
-
-    try {
-      await downloadImage(imageUrl, join(IMAGES_DIR, filename));
-    } catch (err) {
-      console.warn(`Aviso: falha ao baixar imagem de ${slug}: ${err.message}`);
+    const localImages = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const url = imageUrls[i];
+      const ext = imageExtension(url);
+      const filename = i === 0 ? `${slug}${ext}` : `${slug}-${i + 1}${ext}`;
+      const imagePath = `/properties/${filename}`;
+      try {
+        await downloadImage(url, join(IMAGES_DIR, filename));
+        localImages.push(imagePath);
+      } catch (err) {
+        console.warn(
+          `Aviso: falha ao baixar foto ${i + 1}/${imageUrls.length} de ${slug}: ${err.message}`
+        );
+      }
     }
+
+    if (localImages.length === 0) {
+      console.warn(`Aviso: nenhuma foto salva para ${slug}, ignorado.`);
+      continue;
+    }
+
+    console.log(`  ${slug}: ${localImages.length} foto(s)`);
 
     listings.push({
       id: post.id || `ig-${slug}`,
@@ -212,7 +263,8 @@ async function main() {
       ...(extractPrice(caption) ? { price: extractPrice(caption) } : {}),
       category: guessCategory(caption),
       badge: /vendido/i.test(caption) ? "Vendido" : "À venda",
-      image: imagePath,
+      image: localImages[0],
+      images: localImages,
       ...(extractBedrooms(caption) ? { bedrooms: extractBedrooms(caption) } : {}),
       area: extractArea(caption) ?? 0,
       features: [],

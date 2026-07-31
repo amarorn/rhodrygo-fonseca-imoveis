@@ -13,7 +13,10 @@ export interface Property {
   price?: number;
   category: Exclude<PropertyCategory, "todos">;
   badge: string;
+  /** Capa (primeira foto) — usada nos cards */
   image: string;
+  /** Galeria completa do post (carrossel Instagram) */
+  images?: string[];
   bedrooms?: number;
   bathrooms?: number;
   area: number;

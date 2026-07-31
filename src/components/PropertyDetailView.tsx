@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,11 +11,12 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/SocialIcons";
+import { PropertyGallery } from "@/components/PropertyGallery";
 import type { Property } from "@/types";
 import { formatPrice, buildWhatsAppLink } from "@/lib/utils";
 import { useGeo } from "@/hooks/useGeo";
-import { assetPath } from "@/lib/site";
 import { buildPropertyUtm } from "@/lib/analytics";
+import { getPropertyImages } from "@/lib/properties";
 
 interface PropertyDetailViewProps {
   property: Property;
@@ -26,6 +26,7 @@ export function PropertyDetailView({ property }: PropertyDetailViewProps) {
   const priceLabel = formatPrice(property.price);
   const utm = buildPropertyUtm(property.slug);
   const geo = useGeo();
+  const gallery = getPropertyImages(property);
   const whatsappMessage = property.price
     ? `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location} (${priceLabel}). Vi a página do imóvel no site.`
     : `Olá Rhodrygo! Tenho interesse no ${property.title} em ${property.location}. Vi a página do imóvel no site e gostaria de saber o valor.`;
@@ -42,23 +43,12 @@ export function PropertyDetailView({ property }: PropertyDetailViewProps) {
       </Link>
 
       <div className="overflow-hidden rounded-3xl bg-white shadow-xl">
-        <div className="relative aspect-[16/10] w-full">
-          <Image
-            src={assetPath(property.image)}
-            alt={property.title}
-            fill
-            priority
-            unoptimized
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 960px"
-          />
-          <span className="absolute left-4 top-4 rounded-full bg-rf-gold px-4 py-1.5 text-sm font-semibold text-rf-navy">
-            {property.badge}
-          </span>
-          <span className="absolute bottom-4 right-4 rounded-xl bg-rf-navy/90 px-4 py-2 text-lg font-bold text-white backdrop-blur-sm">
-            {priceLabel}
-          </span>
-        </div>
+        <PropertyGallery
+          images={gallery}
+          title={property.title}
+          badge={property.badge}
+          priceLabel={priceLabel}
+        />
 
         <div className="p-6 sm:p-10">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

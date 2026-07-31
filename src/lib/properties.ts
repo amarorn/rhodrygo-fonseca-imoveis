@@ -10,3 +10,10 @@ export function getPropertyBySlug(slug: string): Property | undefined {
 export function getAllPropertySlugs(): string[] {
   return PROPERTIES.map((p) => p.slug);
 }
+
+/** Galeria do imóvel; fallback para a capa se `images` estiver vazio. */
+export function getPropertyImages(property: Property): string[] {
+  const gallery = property.images?.filter(Boolean) ?? [];
+  if (gallery.length > 0) return gallery;
+  return property.image ? [property.image] : [];
+}
