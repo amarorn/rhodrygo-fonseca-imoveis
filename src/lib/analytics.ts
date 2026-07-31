@@ -139,7 +139,50 @@ export function saveManualGeo(input: {
   });
 }
 
-async function reverseGeocode(lat: number, lng: number): Promise<GeoParams | null> {
+type ReverseProvider = (lat: number, lng: number) => Promise<GeoParams | null>;
+
+/** BigDataCloud — pensado para browser (CORS ok, sem API key). */
+const reverseViaBigDataCloud: ReverseProvider = async (lat, lng) => {
+  const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+  url.searchParams.set("latitude", String(lat));
+  url.searchParams.set("longitude", String(lng));
+  url.searchParams.set("localityLanguage", "pt");
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`bigdatacloud ${res.status}`);
+  const data = await res.json();
+
+  const neighborhood =
+    data.locality ??
+    data.suburb ??
+    data.city ??
+    undefined;
+
+  const city =
+    data.city ??
+    data.locality ??
+    data.principalSubdivision ??
+    undefined;
+
+  // Em praias/vilarejos o "city" e "locality" podem ser iguais (ex.: Pipa)
+  const samePlace =
+    neighborhood &&
+    city &&
+    neighborhood.toLowerCase() === city.toLowerCase();
+
+  return {
+    city: samePlace ? city : city,
+    neighborhood: samePlace ? undefined : neighborhood !== city ? neighborhood : undefined,
+    region: data.principalSubdivision ?? undefined,
+    country: data.countryName ?? undefined,
+    lat,
+    lng,
+    precision: "gps",
+  };
+};
+
+/** Nominatim OSM — fallback. */
+const reverseViaNominatim: ReverseProvider = async (lat, lng) => {
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.searchParams.set("lat", String(lat));
   url.searchParams.set("lon", String(lng));
@@ -160,6 +203,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<GeoParams | nul
     addr.quarter ??
     addr.city_district ??
     addr.village ??
+    addr.hamlet ??
     undefined;
 
   const city =
@@ -178,35 +222,100 @@ async function reverseGeocode(lat: number, lng: number): Promise<GeoParams | nul
     lng,
     precision: "gps",
   };
+};
+
+async function reverseGeocode(lat: number, lng: number): Promise<GeoParams | null> {
+  for (const provider of [reverseViaBigDataCloud, reverseViaNominatim]) {
+    try {
+      const geo = await provider(lat, lng);
+      if (geo && (geo.city || geo.neighborhood)) return geo;
+    } catch {
+      // tenta próximo
+    }
+  }
+  return null;
+}
+
+export type PreciseGeoErrorCode = "unsupported" | "denied" | "unavailable" | "timeout" | "geocode";
+
+export class PreciseGeoError extends Error {
+  code: PreciseGeoErrorCode;
+  constructor(code: PreciseGeoErrorCode, message: string) {
+    super(message);
+    this.code = code;
+  }
 }
 
 /**
  * Pede permissão de GPS e resolve cidade/bairro via reverse geocode.
  * Mais preciso que IP (nível bairro quando disponível).
  */
-export async function capturePreciseGeoFromBrowser(): Promise<GeoParams | null> {
-  if (typeof window === "undefined" || !navigator.geolocation) return null;
+export async function capturePreciseGeoFromBrowser(): Promise<GeoParams> {
+  if (typeof window === "undefined" || !navigator.geolocation) {
+    throw new PreciseGeoError("unsupported", "Geolocalização não suportada");
+  }
 
-  const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 60_000,
+  let position: GeolocationPosition;
+  try {
+    position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60_000,
+      });
     });
-  });
+  } catch (err) {
+    const geoErr = err as GeolocationPositionError;
+    if (geoErr?.code === 1) {
+      throw new PreciseGeoError("denied", "Permissão de localização negada");
+    }
+    if (geoErr?.code === 3) {
+      throw new PreciseGeoError("timeout", "Tempo esgotado ao obter GPS");
+    }
+    throw new PreciseGeoError("unavailable", "GPS indisponível no momento");
+  }
 
   const { latitude: lat, longitude: lng } = position.coords;
   const geo = await reverseGeocode(lat, lng);
-  if (!geo || (!geo.city && !geo.neighborhood)) return null;
 
   const current = getStoredGeo();
+
+  // Mesmo sem reverse geocode, salva coordenadas + cidade do IP
+  if (!geo || (!geo.city && !geo.neighborhood)) {
+    if (current?.city) {
+      return persistGeo({
+        ...current,
+        lat,
+        lng,
+        precision: "gps",
+      });
+    }
+    throw new PreciseGeoError("geocode", "GPS ok, mas não achei o bairro");
+  }
+
+  // Normaliza Pipa / Tibau do Sul
+  const cityNorm = (geo.city ?? "").toLowerCase();
+  const neighNorm = (geo.neighborhood ?? "").toLowerCase();
+  let city = geo.city ?? current?.city;
+  let neighborhood = geo.neighborhood;
+
+  if (cityNorm.includes("pipa") || neighNorm.includes("pipa")) {
+    city = "Tibau do Sul";
+    neighborhood = "Pipa";
+  } else if (cityNorm.includes("tibau")) {
+    city = "Tibau do Sul";
+    if (!neighborhood) neighborhood = "Pipa";
+  }
+
   return persistGeo({
     ...current,
     ...geo,
-    // Mantém cidade do IP se reverse não trouxer
-    city: geo.city ?? current?.city,
-    region: geo.region ?? current?.region,
+    city,
+    neighborhood,
+    region: geo.region ?? current?.region ?? "Rio Grande do Norte",
     country: geo.country ?? current?.country,
+    lat,
+    lng,
     precision: "gps",
   });
 }

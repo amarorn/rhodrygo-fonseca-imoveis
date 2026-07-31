@@ -73,6 +73,13 @@ export function citiesMatch(userCity: string | undefined, propertyLocation: stri
   if (isInGroup(userCity, NATAL_METRO) && isInGroup(propertyLocation, NATAL_METRO)) {
     return true;
   }
+  // Pipa fica em Tibau do Sul
+  if (
+    (userNorm.includes("tibau") || userNorm.includes("pipa")) &&
+    (propNorm.includes("pipa") || propNorm.includes("tibau"))
+  ) {
+    return true;
+  }
   return false;
 }
 

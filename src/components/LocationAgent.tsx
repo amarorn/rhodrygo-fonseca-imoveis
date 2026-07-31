@@ -14,6 +14,7 @@ import {
 import { PROPERTIES } from "@/lib/constants";
 import {
   capturePreciseGeoFromBrowser,
+  PreciseGeoError,
   saveManualGeo,
   trackLead,
 } from "@/lib/analytics";
@@ -151,21 +152,26 @@ export function LocationAgent() {
     setGpsError(null);
     try {
       const result = await capturePreciseGeoFromBrowser();
-      if (!result) {
-        setGpsError(
-          "Não consegui ler o GPS. Sem problema — escolha o bairro na lista abaixo."
-        );
-        return;
-      }
       setState("suggesting");
       trackLead("ViewContent", {
         content_name: "location_gps",
         content_category: formatGeoLabel(result),
       });
-    } catch {
-      setGpsError(
-        "GPS bloqueado neste navegador. Escolha o bairro na lista — funciona igual."
-      );
+    } catch (err) {
+      if (err instanceof PreciseGeoError) {
+        const messages: Record<string, string> = {
+          denied:
+            "Permissão de localização negada. Escolha o bairro na lista abaixo.",
+          timeout: "O GPS demorou demais. Tente de novo ou escolha na lista.",
+          unavailable: "GPS indisponível agora. Escolha o bairro na lista.",
+          unsupported: "Este navegador não tem GPS. Escolha o bairro na lista.",
+          geocode:
+            "Localizei você, mas não achei o bairro. Escolha na lista para afinar.",
+        };
+        setGpsError(messages[err.code] ?? "Não foi possível usar o GPS. Escolha na lista.");
+      } else {
+        setGpsError("Não foi possível usar o GPS. Escolha o bairro na lista.");
+      }
     } finally {
       setGpsLoading(false);
     }
